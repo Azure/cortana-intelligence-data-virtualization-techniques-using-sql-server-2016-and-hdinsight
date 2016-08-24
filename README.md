@@ -81,7 +81,7 @@ To get started, choose a deployment method below. Either deploy the Azure resour
 ### One Button Deploy
 Clicking button below creates a new `blade` in Azure portal.
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgithub.com%2Fawaemmanuel%2Fdatavirtualization-test%2Fblob%2Fmaster%2Fscripts%2Fazuredeploy.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https://github.com/Azure/cortana-intelligence-dw-advanced-hybrid-analytics/blob/master/azuredeploy.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 This will create a new "blade" in the Azure portal.
 
