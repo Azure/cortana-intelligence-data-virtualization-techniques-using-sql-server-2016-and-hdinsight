@@ -419,7 +419,7 @@
             "type": "Microsoft.Compute/virtualMachines",
             "location": "eastus2",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/', variables('clusterStorageAccountName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/', variables('clusterStorageAccountName'))]"
             ]
         }
     ],
