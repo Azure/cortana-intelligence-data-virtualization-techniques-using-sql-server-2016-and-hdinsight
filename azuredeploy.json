@@ -141,7 +141,7 @@
             "metadata": {
                 "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
             }
-        },
+        }
     },
     "variables": {
         "clusterStorageAccountName": "[concat('hybriddw', uniquestring(resourceGroup().id))]",
@@ -251,7 +251,7 @@
                         "core-site": {
                             "fs.defaultFS": "[concat('wasb://', parameters('clusterName'), '@', variables('clusterStorageAccountName'),'.blob.core.windows.net')]",
                             "[concat('fs.azure.account.key.', variables('clusterStorageAccountName'), '.blob.core.windows.net')]": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').keys[0].value]"
-                        },
+                        }
                     }
                 },
                 "computeProfile": {
