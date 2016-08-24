@@ -420,7 +420,7 @@
             "location": "eastus2",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts/', variables('clusterStorageAccountName'))]",
-            ],
+            ]
         }
     ],
     "outputs": {
