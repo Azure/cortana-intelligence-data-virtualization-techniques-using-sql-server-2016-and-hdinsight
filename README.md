@@ -43,7 +43,7 @@ maybe challenging. The user can perform the transformation on HDI, project, merg
 3. [Resource Deployment Walkthrough](#resource-deployment-walkthrough)
 4. [Integrating data from Azure Blob with SQL-Like Systems via Polybase](#integrating-data-from-azure-blob-with-sql-via-polybase)
 5. [Integrating data from SQL sources with HDInsight via SparkSQL](#integrating-data-from-sql-sources-with-hdinsight-using-sparksql)
-6. [Integrating data from On-Premises Hadoop with HDInsight](#integrating-data-from-on-premises-hadoop-with-hdinsight)
+6. [Integrating semi-structured data from On-Premises sources with HDInsight - Update and Merge into SQL DW](#integrating-semi-structured-data-from-on-premises-sources-with-sql-datawarehouse-using-hdinsight)
 7. [Migrating data from On-Premises SQL sources to HDInsight external tables using PolyBase and Azure Blob](#migrating-sql-data-to-hdi-using-polybase-and-blob)
 
 ## Scope
@@ -368,7 +368,7 @@ With the JDBC defined variables, connect and load data from the SQL DW table.
   **NOTE:** All JDBC jar files are available on HDI Clusters by default at **/usr/hdp/<version_of_hdp_number>/hive/lib/**  
 
 ```
-$SPARK_HOME/bin/spark-shell --jars  /usr/hdp/2.4.2.0-258/hive/lib/sqljdbc4.jar
+$SPARK_HOME/bin/spark-shell --jars  /usr/hdp/current/hive-server2/lib/sqljdbc4.jar
 ```
 
 If Spark shell loads successfully, we can now connect to the SQL DW Table **FactInternetSale** and read the table.  
@@ -510,7 +510,7 @@ scala> results.show
 
   
 
-## Integrating data from On Premises Hadoop with HDInsight
+## Integrating Semi-structured Data From On Premises Sources With SQL Datawarehouse using HDInsight
 #### **USE CASE:**   
 - INTEGRATING SEMI-STRUCTURED DATA WITH RELATIONAL DATA. 
 
