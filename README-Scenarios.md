@@ -108,7 +108,6 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 <a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 
-
 #### Prerequisites  
 The following PolyBase T-SQL objects are required. 
 

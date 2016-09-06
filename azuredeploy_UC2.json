@@ -2,20 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "unique-id": {
-            "type": "string",
-            "defaultValue": "[uniqueString(resourceGroup().id)]",
-            "metadata": {
-                "description": "A globally unique value that will be appended to each resource that is created from this template. The default template expression will generate an appropriate random value."
-            }
-        },
-        "deploy-location": {
-            "type": "string",
-            "defaultValue": "East US 2",
-            "metadata": {
-                "description": "Where to deploy resources. [Recommended: East US 2  as it has all resources.]"
-            }
-        },
         "username": {
             "type": "string",
             "metadata": {
@@ -27,6 +13,13 @@
             "metadata": {
                 "description": "The password must be at least 10 characters in length and must contain at least one digit, one non-alphanumeric character, and one upper or lower case letter."
             }
+        },
+        "unique-id": {
+            "type": "string",
+            "defaultValue": "[uniqueString(resourceGroup().id)]",
+            "metadata": {
+                "description": "A globally unique value that will be appended to each resource that is created from this template. The default template expression will generate an appropriate random value."
+            }
         }
     },
     "variables": {
@@ -36,6 +29,7 @@
         "sqldw-api-version": "2014-04-01-preview",
         "storage-account-type": "Standard_LRS",
         "storage-account": "[concat('dv', 'stor', parameters('unique-id'))]",
+        "deploy-location": "[resourceGroup().location]",
 
         "hdi-cluster-name": "[concat('dv', '-hdi-cluster-', parameters('unique-id'))]",
         "hdi-cluster-type": "spark",
@@ -54,7 +48,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storage-account')]",
             "apiVersion": "[variables('storage-version')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "sku": {
                 "name": "[variables('storage-account-type')]"
             },
@@ -64,7 +58,7 @@
         {
             "type": "Microsoft.HDInsight/clusters",
             "name": "[variables('hdi-cluster-name')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "apiVersion": "[variables('hdi-api-version')]",
             "dependsOn": [
                 "[concat('Microsoft.Storage/storageAccounts/',variables('storage-account'))]"
@@ -127,7 +121,7 @@
         {
             "type": "Microsoft.Sql/servers",
             "name": "[variables('sql-server-name')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "tags": {
                 "displayName": "SqlServer"
             },
@@ -141,7 +135,7 @@
                 {
                     "name": "[variables('sqldw-name')]",
                     "type": "databases",
-                    "location": "[parameters('deploy-location')]",
+                    "location": "[variables('deploy-location')]",
                     "tags": {
                         "displayName": "Data Warehouse"
                     },
@@ -161,7 +155,7 @@
                     "dependsOn": [
                         "[concat('Microsoft.Sql/servers/', variables('sql-server-name'))]"
                     ],
-                    "location": "[parameters('deploy-location')]",
+                    "location": "[variables('deploy-location')]",
                     "name": "AllowAllWindowsAzureIps",
                     "properties": {
                         "endIpAddress": "0.0.0.0",
@@ -169,7 +163,7 @@
                     }
                 }
             ]
-        },
+        }
     ],
     "outputs": {
         "HDI Name": {

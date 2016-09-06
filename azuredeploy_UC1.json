@@ -2,20 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "unique-id": {
-            "type": "string",
-            "defaultValue": "[uniqueString(resourceGroup().id)]",
-            "metadata": {
-                "description": "A globally unique value that will be appended to each resource that is created from this template. The default template expression will generate an appropriate random value."
-            }
-        },
-        "deploy-location": {
-            "type": "string",
-            "defaultValue": "East US 2",
-            "metadata": {
-                "description": "Where to deploy resources. [Recommended: East US 2  as it has all resources.]"
-            }
-        },
         "username": {
             "type": "string",
             "metadata": {
@@ -27,8 +13,16 @@
             "metadata": {
                 "description": "The password must be at least 10 characters in length and must contain at least one digit, one non-alphanumeric character, and one upper or lower case letter."
             }
+        },
+        "unique-id": {
+            "type": "string",
+            "defaultValue": "[uniqueString(resourceGroup().id)]",
+            "metadata": {
+                "description": "A globally unique value that will be appended to each resource that is created from this template. The default template expression will generate an appropriate random value."
+            }
         }
     },
+    
     "variables": {
         "default-version": "2015-06-15",
         "hdi-api-version": "2015-03-01-preview",
@@ -36,6 +30,7 @@
         "vm-version": "2016-03-30",
         "storage-account-type": "Standard_LRS",
         "storage-account": "[concat('dv', 'stor', parameters('unique-id'))]",
+        "deploy-location": "[resourceGroup().location]",
 
         "hdi-cluster-name": "[concat('dv', '-hdi-cluster-', parameters('unique-id'))]",
         "hdi-cluster-type": "spark",
@@ -64,7 +59,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storage-account')]",
             "apiVersion": "[variables('storage-version')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "sku": {
                 "name": "[variables('storage-account-type')]"
             },
@@ -74,7 +69,7 @@
         {
             "type": "Microsoft.HDInsight/clusters",
             "name": "[variables('hdi-cluster-name')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "apiVersion": "[variables('hdi-api-version')]",
             "dependsOn": [
                 "[concat('Microsoft.Storage/storageAccounts/',variables('storage-account'))]"
@@ -138,7 +133,7 @@
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('pbvm-public-ip-name')]",
             "apiVersion": "[variables('vm-version')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "properties": {
                 "publicIPAllocationMethod": "[variables('pbvm-ip-allocation-type')]",
                 "dnsSettings": {
@@ -150,7 +145,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('pbvm-virtual-network-name')]",
             "apiVersion": "[variables('vm-version')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -171,7 +166,7 @@
             "type": "Microsoft.Network/networkInterfaces",
             "name": "[variables('pbvm-nic-name')]",
             "apiVersion": "[variables('vm-version')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses/', variables('pbvm-public-ip-name'))]",
                 "[resourceId('Microsoft.Network/virtualNetworks/', variables('pbvm-virtual-network-name'))]"
@@ -196,7 +191,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('pbvm-name')]",
-            "location": "[parameters('deploy-location')]",
+            "location": "[variables('deploy-location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts/', variables('storage-account'))]"
             ],
