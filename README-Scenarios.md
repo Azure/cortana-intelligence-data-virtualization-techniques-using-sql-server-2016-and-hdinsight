@@ -108,22 +108,6 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 <a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 
-#### Prerequisites  
-The following PolyBase T-SQL objects are required. 
-
-1. Database scoped credential 
-
-1. External Data source  
-
-1. External file format  
-
-1. Blank external table on Azure Blob  
-
-
-Earlier, in [Integrating data from Azure Blob with SQL-Like Systems via Polybase](#integrating-data-from-azure-blob-with-sql-via-polybase), we created objects that can be reused; database scoped credential, data source, and file format. We will need to create a new external table to hold data projected.  
-
->For detailed information on [Creating PolyBase T-SQL objects](https://msdn.microsoft.com/en-us/library/mt652315.aspx).
-
 **Tables to migrate**  
 1. Product table from AdventureWorks2012.
 
@@ -187,6 +171,69 @@ Outputs
 | ------------- |:-------------:| 
 | `your_database_name`| 130 | 
   
+
+At this point, our SQL Server 2016 is ready to support PolyBase transactions.
+
+
+### Required PolyBase Objects    
+The following PolyBase T-SQL objects are required. 
+
+1. Database scoped credential 
+
+1. External Data source  
+
+1. External file format  
+
+1. Blank external table on Azure Blob  
+
+####  Create the T-SQL objects 
+Polybase can create objects that depend on either Hadoop or Azure Blob. For the purposes of this tutorial, we will be creating our external data source that depends on the latter.
+Connect to the earlier created database on SQL DW and following instructions below.  
+
+**LINKS**  - You can interact with SQL Server 2016 via [Visual Studio](https://www.visualstudio.com/) or [Microsoft SQL Server Management Studio](https://msdn.microsoft.com/en-us/library/mt238290.aspx).  
+
+- Create a master key on the database.  
+This step is very important to encrypt the credential secret during network I/O transmission.
+
+```
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Us3@M0reS3cur3dP@ssw0rd!';
+```
+
+- Use master key to create a database scoped credential for our Azure blob storage.  
+*Parameters:*  
+    - **IDENTITY:** Any string identifier (not used for authentication). *Preferrably use your storage name*.  
+    - **SECRET:** Your Azure storage account key (can be found on [Azure Portal](portal.azure.com))
+
+```
+CREATE DATABASE SCOPED CREDENTIAL AzureStorageCredential
+WITH IDENTITY = '<your_storage_name>', Secret = '<storage_account_access_key>';
+```
+
+- Create your external data source. 
+
+*Parameters:* 
+    - **LOCATION:**  Wasb path to Azure account storage account and blob container.  
+    - **CREDENTIAL:** The database scoped credential we created earlier. 
+
+```
+CREATE EXTERNAL DATA SOURCE AzureStorage WITH (
+	TYPE = HADOOP,
+	LOCATION = 'wasbs://<blob_container_name>@<azure_storage_account_name>.blob.core.windows.net',
+	CREDENTIAL = AzureStorageCredential	
+);
+```
+
+- Create an file format for external source.  
+In Polybase this is important to describe the format/structure of the input data.  
+*Parameters:*  
+    - **FORMAT TYPE:** Data format in Azure Blob. *Examples DELIMITEDTEXT,  RCFILE, ORC, PARQUET.*   
+
+```
+CREATE EXTERNAL FILE FORMAT TextFileFormat WITH (
+	FORMAT_TYPE = DELIMITEDTEXT,
+	FORMAT_OPTIONS (FIELD_TERMINATOR = ',', USE_TYPE_DEFAULT = TRUE)
+);
+```
 
 
 #### Create an external table and define table schema to hold data.
@@ -253,6 +300,8 @@ Move on-prem data to Azure blob using Polybase.
 
 At this point, our data is exported sucessfully Azure Storage. It is easily accessible from HDI, for instance, using Hive or Spark query languages. Update and Merge can easily be achieved where HDI outputs to blob or other destinations.
 
+>For detailed information on [Creating PolyBase T-SQL objects](https://msdn.microsoft.com/en-us/library/mt652315.aspx). 
+
 ##### Integrate exported data back to HDI  (Hive example) 
 The exported data can now be loaded back to HDI for ETL, Update or Merge tasks.
 
@@ -288,8 +337,17 @@ CREATE EXTERNAL TABLE DATAANALYTICS.Product(
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' 
 LINES TERMINATED BY '\n'
 STORED AS TEXTFILE LOCATION 'wasb://<container_name>@<storage_account_name>.blob.core.windows.net/product';
-```  
+``` 
 
-See example above for an example where data residing on blob was integrated with SQL Datawarehouse. ([Integrating data from SQL sources with HDInsight via SparkSQL](#integrating-data-from-sql-sources-with-hdinsight-using-sparksql))  
+> Specific Hive queries to be ran on 
+this table is beyond the scope of this tutorial.   
+
+At this point, the `Product` external table is available to the HDInsight cluster for processing. Results from parallelized jobs (on the Product table) 
+can equally be saved back to the blob location, to be easily re-ingested back to the SQL Server 2016 using PolyBase, for instance.  
+
+```
+SELECT * FROM Product;
+```   
+  
 
 
