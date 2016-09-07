@@ -348,6 +348,21 @@ can equally be saved back to the blob location, to be easily re-ingested back to
 ```
 SELECT * FROM Product;
 ```   
-  
+
+
+## Integrating Semi-structured Data From On Premises Sources With SQL Datawarehouse using HDInsight
+#### Use Case Summary   
+**INTEGRATING NoSQL DATA WITH REFERENTIAL/RELATIONAL DATA**
+
+Currently, integrating data residing on On-Prem Hadoop with Azure compute platforms, like HDInsight, is not a trivial process. In order to get better end-to-end throughput an intermediate copy to blob would be needed. One would need to use PolyBase and StagedCopy (using **Azure Data Factory**). Azure Data Factory is able to apply transformations that match PolyBase/SQL source requirements. Check out [Staged Copy using PolyBase](https://azure.microsoft.com/en-us/documentation/articles/data-factory-azure-sql-data-warehouse-connector/#staged-copy-using-polybase) for further details.  
+
+This workflow, although offers a way to virtualize data on-prem and in cloud, focuses more on data copy and not integration nor harmonization. This can easily get expensive in terms of resources (for staged copy), security concerns (additional step to encrypt) and so on.   
+
+Our tutorial tries to focus on harmonization processes and routes, hence we will achieve the update and merge using Hadoop sources in Azure.  
+
+We will be using the **FactInternetSale** table from the **AdventureWorks** Dataset.
+
+**Columns -** `ProductKey, OrderDateKey, DueDateKey, ShipDateKey, CustomerKey, PromotionKey, CurrencyKey, SalesTerritoryKey, SalesOrderNumber, SalesOrderLineNumber, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber
+`  
 
 
