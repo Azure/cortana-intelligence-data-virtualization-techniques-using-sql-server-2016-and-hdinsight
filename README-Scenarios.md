@@ -63,10 +63,7 @@ We assume the following prerequisites are fulfilled -
 
 ## Use Cases
 1. [Migrating data from On-Premises SQL sources to HDInsight external tables using PolyBase and Azure Blob](#migrating-sql-data-to-hdi-using-polybase-and-blob)
-3. [Resource Deployment Walkthrough](#resource-deployment-walkthrough)
-4. [Integrating data from Azure Blob with SQL-Like Systems via Polybase](#integrating-data-from-azure-blob-with-sql-via-polybase)
-5. [Integrating data from SQL sources with HDInsight via SparkSQL](#integrating-data-from-sql-sources-with-hdinsight-using-sparksql)
-6. [Integrating semi-structured data from On-Premises sources with HDInsight - Update and Merge into SQL DW](#integrating-semi-structured-data-from-on-premises-sources-with-sql-datawarehouse-using-hdinsight)
+3. [Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
 
 ## Migrating SQL data to HDI using PolyBase and Blob
 #### Use Case Summary
@@ -101,14 +98,14 @@ The architecture of this pattern can be broken down into two cases.
 #### Resource Deployment  
 Clicking button below creates a new `blade` in Azure portal with the following resources deployed:
 
-1. SQL Server 2016 (IAAS)  
+1. One SQL Server 2016 (IAAS)  
 
-1. A Four node HDInsight cluster - _two head nodes and two worker nodes_.
+1. A four node HDInsight cluster - _two head nodes and two worker nodes_.
 
 <a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 
-**Tables to migrate**  
+#### Data Source
 1. Product table from AdventureWorks2012.
 
 **Essential House keeping**  
@@ -350,19 +347,229 @@ SELECT * FROM Product;
 ```   
 
 
-## Integrating Semi-structured Data From On Premises Sources With SQL Datawarehouse using HDInsight
-#### Use Case Summary   
-**INTEGRATING NoSQL DATA WITH REFERENTIAL/RELATIONAL DATA**
+## Integrating NoSQL Data From HDInsight With Relational Data on SQL Datawarehouse 
 
-Currently, integrating data residing on On-Prem Hadoop with Azure compute platforms, like HDInsight, is not a trivial process. In order to get better end-to-end throughput an intermediate copy to blob would be needed. One would need to use PolyBase and StagedCopy (using **Azure Data Factory**). Azure Data Factory is able to apply transformations that match PolyBase/SQL source requirements. Check out [Staged Copy using PolyBase](https://azure.microsoft.com/en-us/documentation/articles/data-factory-azure-sql-data-warehouse-connector/#staged-copy-using-polybase) for further details.  
+## Use Case Summary   
+**INTEGRATING TRANSACTIONAL NoSQL DATA WITH REFERENTIAL/RELATIONAL DATA FROM SQL DW ON HDInsight**
+
+Currently, integrating data residing on On-Prem Hadoop systems with Azure compute platforms, like SQL Datawarehouse, 
+is not a trivial process.  
+
+In order to get better end-to-end throughput, an intermediate copy to blob would be needed; using **PolyBase and Azure Data Factory StagedCopy**. Azure Data Factory is able to apply transformations that match PolyBase/SQL source requirements.  
+
+>Check out [Staged Copy using PolyBase](https://azure.microsoft.com/en-us/documentation/articles/data-factory-azure-sql-data-warehouse-connector/#staged-copy-using-polybase) for further details.  
 
 This workflow, although offers a way to virtualize data on-prem and in cloud, focuses more on data copy and not integration nor harmonization. This can easily get expensive in terms of resources (for staged copy), security concerns (additional step to encrypt) and so on.   
 
 Our tutorial tries to focus on harmonization processes and routes, hence we will achieve the update and merge using Hadoop sources in Azure.  
 
-We will be using the **FactInternetSale** table from the **AdventureWorks** Dataset.
+#### Benefit(s)  
+- Click stream (NoSQL) data, like realtime sales information, can be combined with referential (SQL) data, like products in stock, to decide
+how to control inventory of products for profitability and business intelligence.
 
-**Columns -** `ProductKey, OrderDateKey, DueDateKey, ShipDateKey, CustomerKey, PromotionKey, CurrencyKey, SalesTerritoryKey, SalesOrderNumber, SalesOrderLineNumber, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber
+- Queries can be scaled out and parallelized using Hive, HBase or Spark.  
+
+- HDInsight, out of the box, supports connectivity to relational data sources via `JDBC`. Using Views, complex joins can be 
+materialized on SQL Datawarehouse and results pulled into Spark for further processing.
+
+- Complex joins can be done between Facts and Dimensionals, allowing easier Update and Merge operations. 
+
+#### Pipeline  
+![Use Case 2-Architecture](./assets/media/uc2.PNG "HDI with sQL DW Hybrid Analytics")  
+
+#### Resource Deployment  
+Clicking button below creates a new `blade` in Azure portal with the following resources deployed:  
+
+1. One Azure SQL Data Warehouse
+1. A four node HDInsight cluster - _two head nodes and two worker nodes._
+
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC2.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+
+#### Data Source
+1. We will be using the **FactInternetSale** table from the **AdventureWorks** Dataset.
+
+> **Columns -** `ProductKey, OrderDateKey, DueDateKey, ShipDateKey, CustomerKey, PromotionKey, CurrencyKey, SalesTerritoryKey, SalesOrderNumber, SalesOrderLineNumber, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber
 `  
+
+#### Start the spark shell pointing to the JDBC connector.  
+With the JDBC defined variables, connect and load data from the SQL DW table.  
+
+  **NOTE:** All JDBC jar files are available on HDI Clusters by default at **/usr/hdp/<version_of_hdp_number>/hive/lib/**  
+
+```
+$SPARK_HOME/bin/spark-shell --jars  /usr/hdp/current/hive-server2/lib/sqljdbc4.jar
+```
+
+If Spark shell loads successfully, we can now connect to the SQL DW Table **FactInternetSale** and read the table.  
+The following Scala code defines connection variables to an Azure SQL Data Warehouse table and connects to the external table; making it available for querying.    
+
+```
+scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"  
+```
+
+```
+scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"  
+```
+
+```
+scala> val table = "FactInternetSales"
+```
+
+**NOTE**  
+Since our exercise implements a hybrid query harmonization between SQL DW and NoSQL, we will use the hiveContext. This will give us the SparkSQL commands and also Hive functionalities that will 
+let use perform joins. We need to do this because temporary tables are registered in-memory and attached to a specific SQLContext.
+
+#### Construct a HiveContext (with SQL implicit commands) and fetch data from SQL DW.
+
+- Import HiveContext package
+
+```
+scala> import org.apache.spark.sql.hive.HiveContext
+
+```
+
+- Construct a HiveContext and attach to existing Spark context.  
+
+  In order to work with Hive from Spark, you must construct a HiveContext.  
+
+  **NOTE** -  HiveContext inherits from SQLContext and also benefits from all SQL commands available from SQLContext. It is still possible to create a HiveContext without a Hive deployment. For details visit [Spark SQL Docs](http://spark.apache.org/docs/latest/sql-programming-guide.html)  
+
+```
+scala> val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
+```
+
+```
+scala> import hiveContext.implicits._
+```
+
+- Fetch data from SQL Data Warehouse
+
+```
+scala> val dw_factInternetSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()
+```
+
+To confirm a success connection, we should get a description of the columns of the table **FactInternetSales** as a **dataframe** `df`  
+
+> df: org.apache.spark.sql.DataFrame = [ProductKey: int, OrderDateKey: int, DueDateKey: int, ShipDateKey: int, CustomerKey: int, PromotionKey: int, CurrencyKey: int, SalesTerritoryKey: int, SalesOrderNumber: string, SalesOrderLineNumber: int, RevisionNumber: int, OrderQuantity: int, UnitPrice: decimal(19,4), ExtendedAmount: decimal(19,4), UnitPriceDiscountPct: double, DiscountAmount: double, ProductStandardCost: decimal(19,4), TotalProductCost: decimal(19,4), SalesAmount: decimal(19,4), TaxAmt: decimal(19,4), Freight: decimal(19,4), CarrierTrackingNumber: string, CustomerPONumber: string]
+
+You can view the data in `dw_factinternetsales` by a call to action `.show`. This will display the **top 20 rows** by fetching results from the executors back to the driver node.
+
+```
+scala> dw_factInternetSales.show
+```
+
+To view the dataframe schema.  
+
+```
+scala> dw_factInternetSales.printSchema
+```
+
+You should a similar output as the following:  
+
+>root  
+ |-- ProductKey: integer (nullable = false)   
+ |-- OrderDateKey: integer (nullable = false)  
+ |-- DueDateKey: integer (nullable = false)  
+ |-- ShipDateKey: integer (nullable = false)  
+ |-- CustomerKey: integer (nullable = false)  
+ |-- PromotionKey: integer (nullable = false)  
+ |-- CurrencyKey: integer (nullable = false)  
+ |-- SalesTerritoryKey: integer (nullable = false)  
+ |-- SalesOrderNumber: string (nullable = false)  
+ |-- SalesOrderLineNumber: integer (nullable = false)  
+ |-- RevisionNumber: integer (nullable = false)  
+ |-- OrderQuantity: integer (nullable = false)  
+ |-- UnitPrice: decimal(19,4) (nullable = false)  
+ |-- ExtendedAmount: decimal(19,4) (nullable = false)  
+ |-- UnitPriceDiscountPct: double (nullable = false)  
+ |-- DiscountAmount: double (nullable = false)  
+ |-- ProductStandardCost: decimal(19,4) (nullable = false)  
+ |-- TotalProductCost: decimal(19,4) (nullable = false)  
+ |-- SalesAmount: decimal(19,4) (nullable = false)  
+ |-- TaxAmt: decimal(19,4) (nullable = false)  
+ |-- Freight: decimal(19,4) (nullable = false)  
+ |-- CarrierTrackingNumber: string (nullable = true)  
+ |-- CustomerPONumber: string (nullable = true)  
+
+
+Now we will register our dataframe as a table in our SQLContext i.e. making it queriable like another relational table  
+```
+scala> dw_factInternetSales.registerTempTable("DW_FactInternetSales")
+```
+
+We now have a queriable SQL Data Warehouse table from a Spark SQLContextSQL. Table is registered as a temporary table and has all SQL commands available to SQLContext.  
+To verify the data, a quick select will show this.  
+
+```
+scala>  hiveContext.sql("SELECT * FROM DW_FactInternetSales LIMIT 10").show
+```
+
+Next we want to pull our NoSQL data. 
+
+- Fetch NoSQL Data from HDInsight (from Blob Storage) via HiveContext
+
+Spark gets Hive for free using the HiveContext. To work with Hive (our NoSQL data is imported using a HiveContext), 
+we must create a HiveContext.   
+
+```
+scala>  val hdi_factInternetSales = hiveContext.jsonFile("wasb://<your_storage_name>@<your_storage_account>.blob.core.windows.net/FactInternetSales.json")
+```
+
+To confirm a sucessful load, print the `hdi_factInternetSales` schema.
+
+```
+scala> hdi_factInternetSales.printSchema
+```
+
+>root
+ |-- CarrierTrackingNumber: string (nullable = true)  
+ |-- CurrencyKey: string (nullable = true)  
+ |-- CustomerKey: string (nullable = true)  
+ |-- CustomerPONumber: string (nullable = true)  
+ |-- DiscountAmount: string (nullable = true)  
+ |-- DueDateKey: string (nullable = true)  
+ |-- ExtendedAmount: string (nullable = true)  
+ |-- Freight: string (nullable = true)  
+ |-- OrderDateKey: string (nullable = true)  
+ |-- OrderQuantity: string (nullable = true)  
+ |-- ProductKey: string (nullable = true)  
+ |-- ProductStandardCost: string (nullable = true)  
+ |-- PromotionKey: string (nullable = true)  
+ |-- RevisionNumber: string (nullable = true)  
+ |-- SalesAmount: string (nullable = true)  
+ |-- SalesOrderLineNumber: string (nullable = true)  
+ |-- SalesOrderNumber: string (nullable = true)  
+ |-- SalesTerritoryKey: string (nullable = true)  
+ |-- ShipDateKey: string (nullable = true)  
+ |-- TaxAmt: string (nullable = true)  
+ |-- TotalProductCost: string (nullable = true)  
+ |-- UnitPrice: string (nullable = true)  
+ |-- UnitPriceDiscountPct: string (nullable = true)  
+
+
+```
+scala> hdi_FactInternetSales.registerTempTable("HDI_FactInternetSales")
+```
+
+### Perform Ad-hoc query between SQL DW Table and Hive external table  
+At this point, we have our SQL DW and Hive tables registered in-memory on the Spark executors. Using the HiveContext to
+perform ad-hoc queries like JOINS becomes trivial.
+
+- Join tables
+
+```
+scala> val results = hiveContext.sql("SELECT * FROM HDI_FactInternetSales AS A LEFT JOIN DW_FactInternetSales AS B ON A.productkey = B.productkey LIMIT 10")
+```
+
+`results` is a dataframe (formerly SchemaRDD) that we can view, manipulate and export. 
+
+- View output result. 
+
+```
+scala> results.show
+```
+
+
+
 
 

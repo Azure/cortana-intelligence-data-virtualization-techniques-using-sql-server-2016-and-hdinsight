@@ -375,7 +375,7 @@ If Spark shell loads successfully, we can now connect to the SQL DW Table **Fact
 The following Scala code defines connection variables to an Azure SQL Data Warehouse table and connects to the external table; making it available for querying.    
 
 ```
-scala> val url = "jdbc:sqlserver://<mysqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"  
+scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"  
 ```
 
 ```
