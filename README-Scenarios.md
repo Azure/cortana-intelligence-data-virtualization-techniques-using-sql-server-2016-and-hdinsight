@@ -75,6 +75,105 @@ The option of migrating big data to cloud for this task is becomging very useful
 Needless to say, applications that are dependent on on-prem infrastructure would need
  to still be supported, while the ETL is run in cloud. This use case covers a pattern of projecting data, using Polybase, to HDInsight clusters targetting external tables that are backed by Azure Blob.  
 
+PolyBase opens up a bigger opportunity for data processing and analytics. 
+
+- It provides integration between traditional SQL sources (SQL Server 2016, SQL DW, Parallel DW) and other big data platforms like Hadoop.  
+
+-  With Standard SQL (as against MapReduce), customers can integrate Hadoop and relational data.
+
+- Achieve query scale out and execution performance by predicate push-down to your already existing Hadoop clusters.
+
+PolyBase support for transactional SQL (T-SQL) varies slightly on what SQL compute platform in question.   
+
+For instance PolyBase does not support `UPDATE` and `DELETE` statements at the time of writing this. However, such `DML` actions can be achieved using `CREATE EXTERNAL AS SELECT`
+on SQL DW and Parallel DW while on SQL Server 16 customers can achieve this by first creating an external table `CREATE EXTERNAL TABLE` (with schema definition) and then a separate `INSERT INTO TABLE AS SELECT` to populate the external table. Intermediate temporary tables need to be created and then `RENAME` command used to overwrite the old table.
+
+> For details examples see [CTAS](https://msdn.microsoft.com/en-us/library/mt204041.aspx) and [CETAS](https://msdn.microsoft.com/en-us/library/mt631610.aspx) for SQL DW and Parallel DW examples.
+
+#### Some T-SQL, HiveQL/ANSI SQL syntax intersections
+
+##### Renaming a table
+Supported on both T-SQL and HIVE with slight differences.
+- [T-SQL](https://msdn.microsoft.com/en-us/library/mt631611.aspx)
+	- SQL DW/PDW
+    
+    ```  
+	RENAME OBJECT [ :: ]  [ [ database_name .  [schema_name ] ] . ] | [schema_name . ] ] table_name TO new_table_name [;]  
+  
+    ```
+    
+    - SQL Server and DB : Use Stored Procedure [sp_renamedb](https://msdn.microsoft.com/en-us/library/ms186217.aspx)
+    
+    ```
+    sp_renamedb [ @dbname = ] 'old_name' , [ @newname = ] 'new_name'  
+    
+    ```
+
+- [HIVE](http://www.tutorialspoint.com/hive/hive_alter_table.htm)
+
+```
+ALTER TABLE name RENAME TO new_name
+```
+
+##### Cloning Table schema without copying data (Create Table Like - CTL) 
+Supported directly on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableLike) alone. 
+
+```
+CREATE TABLE newEmptyTableWithSchema LIKE realTableWeNeedSchemaFrom;
+```
+
+However, you can achieve a similar result in T-SQL using a `SELECT INTO` statement
+
+```
+ SELECT TOP 0 * INTO newEmptyTableWithSchema FROM realTableWeNeedSchemaFrom;
+```
+
+
+##### Creating External Tables
+Supported on [HIVE](http://www.tutorialspoint.com/hive/hive_create_table.htm) and [T-SQL with PolyBase alone](https://msdn.microsoft.com/en-us/library/mt163689.aspx) on SQL Server 16 and Data Warehouse (SQL and Parallel).  
+
+
+##### Creating Table As Select (CTAS) 
+Supported on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableAsSelect(CTAS)) and T-SQL for [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt204041.aspx)
+
+##### Creating External Table As Select (CETAS)
+Supported in T-SQL (with PolyBase) on [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt631610.aspx) but **NOT** supported in HIVE.    
+
+Hive supports only **CTAS** with the following ceveats **FULLY** documented on [Apache Hive Confluence Page](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL)  
+
+> CTAS has these restrictions:  
+The target table cannot be a partitioned table.  
+_**The target table cannot be an external table.**_   
+The target table cannot be a list bucketing table.
+
+
+##### Update
+Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms177523.aspx) for internal tables. 
+
+> NOTE  
+`UPDATE` is not supported on external tables. Only the following are allowed on external tables.  
+- CREATE and DROP TABLE  
+- CREATE AND DROP STATISTICS  
+- CREATE AND DROP VIEW  
+
+>For further information check [Limitations and Restrictions of T-SQL Create External Table](https://msdn.microsoft.com/en-us/library/dn935021.aspx)
+
+Support for [HIVE] is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID
+
+
+##### Delete
+Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms189835.aspx) for internal tables.
+> NOTE  
+No `DML` is allowed on external tables.  
+Find more information [here.](https://msdn.microsoft.com/en-us/library/mt631610.aspx)
+
+Support for [HIVE] is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID
+
+
+##### Insert Into Select
+
+Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-InsertingdataintoHiveTablesfromqueries) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms174335.aspx)  
+
 #### Benefit(s)  
 - Delegation of time consuming processes/jobs to the cloud for parallelized computations. 
 
