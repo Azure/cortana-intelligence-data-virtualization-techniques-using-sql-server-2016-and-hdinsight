@@ -691,3 +691,54 @@ Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageMan
 It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.
 
 
+##### HDI Cluster and Azure Data Lake Store (ADLS) Authentication and Connectivity.  
+- **Authentication:** A certified identity is required in Azure Active Directory (AAD).   
+
+- **Connectivity:** ADLS exposes a web-based RESTful interface to allows calls to be made.   
+	- Calls need to be made with a JSON Web Token (JWT) that is obtained for identity from AAD. 
+
+- **Service Principle Identity (SPI):**  A headless user in the AAD that is associated with a certificate.  
+
+- **Credential Creation:** During the creation of the HDI Cluster, a SPI (and its certificate) is created in AAD and stored in the cluster.
+
+- **Runtime Processing:** At runtime, the web-credential is used for the interaction. The associated web-token is passed to AAD which exchanges it with a JWT. The JWT is used to make the actual calls.
+
+- **Data Access:** Different users can interact with the ADLS using the same SPI. Hence the SPI needs access to your data.
+	- Data is read and written by the SPI.
+    
+##### Create the Certificate and Service Principal Identity  
+###### Requirements
+
+1. An Active [Azure](https://azure.microsoft.com/) subscription.  
+1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands 
+    
+###### Create a PFX certificate
+
+On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
+
+```
+$certFolder = "C:\certificates"
+$certFilePath = "$certFolder\certFile.pfx"
+$certStartDate = (Get-Date).Date
+$certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
+$certEndDate = $certStartDate.AddYears(1)
+$certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
+$certName = "HDI-ADLS-SPI"
+$certPassword = "new_password_here"
+$certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
+
+mkdir $certFolder
+
+$cert = New-SelfSignedCertificate -DnsName $certName -CertStoreLocation cert:\CurrentUser\My -KeySpec KeyExchange -NotAfter $certEndDate -NotBefore $certStartDate
+$certThumbprint = $cert.Thumbprint
+$cert = (Get-ChildItem -Path cert:\CurrentUser\My\$certThumbprint)
+
+Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswordSecureString
+
+```
+
+
+###### Create the Service Principal Identity (SPI)  
+Using the earlier created certificate, create your SPI
+
+
