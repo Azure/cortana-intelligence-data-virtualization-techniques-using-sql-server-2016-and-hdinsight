@@ -707,12 +707,32 @@ It'll be a very useful tool to assist your translation of SQL logic to Hive on H
 	- Data is read and written by the SPI.
     
 ##### Create the Certificate and Service Principal Identity  
+
+
 ###### Requirements
 
 1. An Active [Azure](https://azure.microsoft.com/) subscription.  
-1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands 
+1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands.   
+
+
+If you have created a SPI and certificate before, feel free to jump to Step 4 below after Step 1, otherwise continue to create one quickly.  
+
+###### 1. Login in to Azure and Add Subscription.  
+
+- Power Windows PowerShell
+
+- Add Azure Subscription  
+
+	`Add-AzureRmAccount`  
     
-###### Create a PFX certificate
+OR  
+
+- Login into Azure if you have previously added your Azure subscription.  
+
+	` Login-AzureRmAccount`
+    
+    
+###### 2. Create a PFX certificate
 
 On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
 
@@ -738,7 +758,49 @@ Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswor
 ```
 
 
-###### Create the Service Principal Identity (SPI)  
-Using the earlier created certificate, create your SPI
+###### 3. Create the Service Principal Identity (SPI)  
+Using the earlier created certificate, create your SPI.
+
+```
+$clusterName = "your_new_hdi_cluster_name"
+$certificatePFX = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certFilePath, $certPasswordSecureString)
+$credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
+```
+
+Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
+```
+$application = New-AzureRmADApplication -DisplayName $certName  
+-HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Use this cmdlet, if you installed Azure PowerShell 1.0
+```
+$application = New-AzureRmADApplication -DisplayName $certName `
+                        -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
+                        -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
+                        -StartDate $certStartDate -EndDate $certEndDate
+
+$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
+```
+
+###### 4. Retrieve SPI information needed for HDI deployment
+
+On Windows PowerShell 
+
+- Application ID:  
+`$servicePrincipal.ApplicationId`
+
+- Object ID:  
+`$servicePrincipal.Id`
+
+- AAD Tenant ID:  
+`(Get-AzureRmContext).Tenant.TenantId`
+
+- Base-64 PFX file contents:  
+`[System.Convert]::ToBase64String((Get-Content $certFilePath -Encoding Byte))`
+
+- PFX password:  
+`$certPassword`
+
 
 
