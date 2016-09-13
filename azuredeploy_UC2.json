@@ -75,12 +75,12 @@
         "hdi-cluster-version": "3.4",
         "hdi-cluster-node-size": "Standard_D14",
         "hdi-worker-count": "2",
-        "sql-server-name": "[concat('dv', '-sqlserver-', parameters('unique-id'))]",
+        "sql-server-name": "[concat('sqlserver', parameters('unique-id'))]",
         "sqldw-name": "[concat('dv', '-sqldw-', parameters('unique-id'))]",
         "sql-collation": "SQL_LATIN1_GENERAL_CP1_CI_AS",
-        "sql-requested-service": "DW400",
+        "sql-requested-service": "DW100",
 
-        "adl-store-name": "[concat('dv', '-adls-', parameters('unique-id'))]",
+        "adl-store-name": "[concat('dv', 'adls', parameters('unique-id'))]",
         "adls-api-version": "2015-10-01-preview"
     },
     "resources": [

@@ -769,8 +769,7 @@ $credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
 
 Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
 ```
-$application = New-AzureRmADApplication -DisplayName $certName  
--HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
+$application = New-AzureRmADApplication -DisplayName $certName -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
 ```
 
 Use this cmdlet, if you installed Azure PowerShell 1.0
