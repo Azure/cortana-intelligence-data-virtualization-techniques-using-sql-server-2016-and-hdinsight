@@ -688,8 +688,14 @@ Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageMan
 > ##### Hive For SQL Users  
 > For customers that are already know SQL, [Horton Works](http://hortonworks.com/) has created a handy Hive 
 ["Cheat Sheet"](http://hortonworks.com/blog/hive-cheat-sheet-for-sql-users/) for SQL users. 
-It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.
+It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.  
 
+
+> For further readings, these external links could be interesting. 
+
+> 1. [Subtle differences between HiveQL and SQL](http://www.wmanalytics.io/blog/list-subtle-differences-between-hiveql-and-sql) by WebMasson Analytics.
+
+> 2. [Difference Between SQL and T-SQL](http://www.differencebetween.net/technology/software-technology/difference-between-sql-and-t-sql/) by www.diferencebetween.net
 
 ##### HDI Cluster and Azure Data Lake Store (ADLS) Authentication and Connectivity.  
 - **Authentication:** A certified identity is required in Azure Active Directory (AAD).   
@@ -778,7 +784,10 @@ $application = New-AzureRmADApplication -DisplayName $certName `
                         -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
                         -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
                         -StartDate $certStartDate -EndDate $certEndDate
+```
 
+Retrieve the Service Principal details
+```
 $servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
 ```
 

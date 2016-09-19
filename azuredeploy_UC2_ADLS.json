@@ -27,6 +27,36 @@
             "metadata": {
                 "description": "A globally unique value that will be appended to each resource that is created from this template. The default template expression will generate an appropriate random value."
             }
+        },
+        "service-principal-objectId": {
+            "type": "string",
+            "metadata": {
+                "description": "The AAD object ID (guid) of the service principal that represents the HDInsight cluster. The service principal will be given permissions on the root folder of the Data Lake Store account."
+            }
+        },
+        "service-principal-applicationId": {
+            "type": "string",
+            "metadata": {
+                "description": "The AAD application ID (guid) of the service principal that represents the HDInsight cluster. The service principal will be given permissions on the root folder of the Data Lake Store account."
+            }
+        },
+        "service-principal-certificate-contents": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The base-64-encoded contents of the PFX certificate file that can be used to authenticate as the service principal that represents the HDInsight cluster."
+            }
+        },
+        "service-principal-certificate-password": {
+            "type": "securestring",
+            "metadata": {
+                "description": "The password securing the PFX certificate file that can be used to authenticate as the service principal that represents the HDInsight cluster."
+            }
+        },
+        "aad-tenantId": {
+            "type": "string",
+            "metadata": {
+                "description": "The tenant ID (guid) of the Azure Active Directory (AAD) tenant where the service principal resides."
+            }
         }
     },
     "variables": {
@@ -48,7 +78,10 @@
         "sql-server-name": "[concat('sqlserver', parameters('unique-id'))]",
         "sqldw-name": "[concat('dv', '-sqldw-', parameters('unique-id'))]",
         "sql-collation": "SQL_LATIN1_GENERAL_CP1_CI_AS",
-        "sql-requested-service": "DW100"
+        "sql-requested-service": "DW100",
+
+        "adl-store-name": "[concat('dv', 'adls', parameters('unique-id'))]",
+        "adls-api-version": "2015-10-01-preview"
     },
     "resources": [
         {
@@ -63,12 +96,24 @@
             "properties": {}
         },
         {
+            "name": "[variables('adl-store-name')]",
+            "type": "Microsoft.DataLakeStore/accounts",
+            "location": "East US 2",
+            "apiVersion": "[variables('adls-api-version')]",
+            "dependsOn": [],
+            "tags": {},
+            "properties": {
+                "initialUser": "[parameters('service-principal-objectId')]"
+            }
+        },
+        {
             "type": "Microsoft.HDInsight/clusters",
             "name": "[variables('hdi-cluster-name')]",
             "location": "[variables('deploy-location')]",
             "apiVersion": "[variables('hdi-api-version')]",
             "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/',variables('storage-account'))]"
+                "[concat('Microsoft.Storage/storageAccounts/',variables('storage-account'))]",
+                "[concat('Microsoft.DataLakeStore/accounts/',variables('adl-store-name'))]"
             ],
             "tags": {},
             "properties": {
@@ -82,6 +127,13 @@
                             "restAuthCredential.isEnabled": true,
                             "restAuthCredential.username": "[parameters('username')]",
                             "restAuthCredential.password": "[parameters('password')]"
+                        },
+                        "clusterIdentity": {
+                            "clusterIdentity.applicationId": "[parameters('service-principal-applicationId')]",
+                            "clusterIdentity.certificate": "[parameters('service-principal-certificate-contents')]",
+                            "clusterIdentity.certificatePassword": "[parameters('service-principal-certificate-password')]",
+                            "clusterIdentity.aadTenantId": "[concat('https://login.windows.net/',parameters('aad-tenantId'))]",
+                            "clusterIdentity.resourceUri": "https://management.core.windows.net/"
                         },
                         "core-site": {
                             "fs.defaultFS": "[concat('wasb://', variables('hdi-cluster-name'), '@', variables('storage-account'),'.blob.core.windows.net')]",
