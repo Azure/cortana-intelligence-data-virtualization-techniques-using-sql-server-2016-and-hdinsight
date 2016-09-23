@@ -375,7 +375,7 @@ This pattern applies to SQL Server 2016 with PolyBase support and Hortonworks HD
 place.    
 
 
-![Use Case 1-Architecture](./assets/media/pushdown-architecture.PNG "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")  
+![Use Case 1-Architecture](./assets/media/pushdown-architecture.png "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")  
 
 #### Resource Deployment  
 
@@ -421,8 +421,36 @@ Make sure it passes successfully before continuing.
 Make sure it passes successfully before continuing.
 ![Set other features](./assets/media/SELECT-HDP-7.PNG "VM Size")
 
-#### Hadoop configuration and tuning used for HDP Hadoop VM
-As part of HDP 2.0 Beta, YARN takes the resource management capabilities that were in MapReduce and packages them so they can be used by new engines.  This also streamlines MapReduce to do what it does best, process data.  With YARN, you can now run multiple applications in Hadoop, all sharing a common resource management.
+#### Hadoop configuration and tuning used for HDP Hadoop VM  
+
+Changes have been made between MapReduce and MapReduce2. In MpaReduce2 running on HDP (2.X), resource management can now be reused between engines. MapReduce can now focus completely on data processing while Resource Manager and YARN provides a user the ability to run multiple applications in Hadoop that share the same resources.  
+
+##### Essential information and flags to set in configuration.
+- On yarn-site.xml  
+	- **yarn.nodemanager.resource.memory-mb** : Total amount of memory given to the Resource Manager.
+	- **yarn.scheduler.minimum-allocation-mb** : Minimum RAM yarn allocates containers.
+	- **yarn.nodemanager.vmem-pmem-ratio** : Memory allocations for Map tasks – Virtual memory upper limit.  
+	- *yarn.nodemanager.resource.cpu-vcores* : Number of virtual cores allocated. Best practice is to have 1 or 2 containers per disk per core.
+
+
+- On mapred-site.xml
+	- **mapreduce.map.memory.mb** : Memory size for Map tasks.
+	- **mapreduce.reduce.memory.mb** : Memory size for Reduce tasks. Should be twice Map size.
+	- **mapreduce.map.java.opts** : Upper limit of the physical RAM for Map task JVM.
+	- **mapreduce.reduce.java.opts** : Upper limit of the physical RAM for Reduce task JVM.
+
+> IMPORTANT NOTE  
+> Set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
+>
+> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services.
+
+- Isolate different service config changes with Ambari Config Groups.
+
+
+
+
+
+
 
 #### Possible issues and fixes proposed
 1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
@@ -463,12 +491,60 @@ As part of HDP 2.0 Beta, YARN takes the resource management capabilities that we
 
 	1. ssh into the VM and run the following command as the root user  
 	`ambari-admin-password-reset`
-	2. When prompted enter a password. This action restarts Ambari server.  
+	1. When prompted enter a password. This action restarts Ambari server.  
 
-	3. Finally run command  
+	1. Finally run command  
 	`ambari-agent restart`
-4. You can then go to the http://<hostname/ipaddress>:8888 which displays the splash page and click on the Ambari url. Enter the user "admin" and put the password you set previouly in step 2. You should now be able to log in as an Ambari admin.
+	1. Point browser to http://<hostname/ipaddress>:8088  
+	 	- Enter the user "admin" and put the password you set up (via ssh on VM)
 
+1. Unable to parse HDP version error
+	```
+		java.lang.IllegalArgumentException: Unable to parse '/hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.gz#mr-framework' as a URI,\
+	 check the setting for mapreduce.application.framework.path
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:181)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setMRFrameworkClasspath(MRApps.java:206)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setClasspath(MRApps.java:258)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.getInitialClasspath(TaskAttemptImpl.java:621)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createCommonContainerLaunchContext(TaskAttemptImpl.java:757)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createContainerLaunchContext(TaskAttemptImpl.java:821)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1557)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1534)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory$SingleInternalArc.doTransition(StateMachineFactory.java:362)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory.doTransition(StateMachineFactory.java:302)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory.access$300(StateMachineFactory.java:46)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory$InternalStateMachine.doTransition(StateMachineFactory.java:448)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:1084)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:145)
+	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1368)
+	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1360)
+	        at org.apache.hadoop.yarn.event.AsyncDispatcher.dispatch(AsyncDispatcher.java:183)
+	        at org.apache.hadoop.yarn.event.AsyncDispatcher$1.run(AsyncDispatcher.java:109)
+	        at java.lang.Thread.run(Thread.java:745)
+	Caused by: java.net.URISyntaxException: Illegal character in path at index 11: /hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.
+	gz#mr-framework
+	        at java.net.URI$Parser.fail(URI.java:2829)
+	        at java.net.URI$Parser.checkChars(URI.java:3002)
+	        at java.net.URI$Parser.parseHierarchical(URI.java:3086)
+	        at java.net.URI$Parser.parse(URI.java:3044)
+	      at java.net.URI.<init>(URI.java:595)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:179)
+	        ... 18 more
+	```
+
+	**FIX**  
+		- Set `hdp.version` on SQL Server in PolyBase mapred-site.xml (_C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf_)  
+
+			<property>
+	 			<name>hdp.version</name>
+ 				<value>2.4.0.0-169</value>
+ 			</property>
+
+1. Inability to query a Namenode in Safe mode  
+	> Cannot execute the query "Remote Query" against OLE DB provider "SQLNCLI11" for linked server "(null)". EXTERNAL TABLE access failed due to internal error: 'Java exception raised on call to JobSubmitter_SubmitJob: Error [Cannot delete /user/pdw_user/.staging/job_1474057623050_0031. Name node is in safe mode.  
+
+	**FIX**  
+	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`
 
 #### Data Source
 1. AdventureWorks2012.
@@ -477,7 +553,7 @@ As part of HDP 2.0 Beta, YARN takes the resource management capabilities that we
 > From SSMS, you may encounter the following error message while trying to export your tables.
 >
 >  
->`Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.`  
+> Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.`  
 >
 > The following configurations must be set correctly.
 > 1. PolyBase must be allowed to export external tables.
@@ -949,118 +1025,6 @@ scala> val results = hiveContext.sql("SELECT * FROM HDI_FactInternetSales AS A L
 scala> results.show
 ```
 
-
-
-## Some TSQL HiveQL and ANSI SQL syntax intersections
-
-##### Renaming a table
-Supported on both T-SQL and HIVE with slight differences.
-- [T-SQL](https://msdn.microsoft.com/en-us/library/mt631611.aspx)
-	- SQL DW/PDW
-
-    ```  
-	RENAME OBJECT [ :: ]  [ [ database_name .  [schema_name ] ] . ] | [schema_name . ] ] table_name TO new_table_name [;]  
-
-    ```
-
-    - SQL Server and DB : Use Stored Procedure [sp_renamedb](https://msdn.microsoft.com/en-us/library/ms186217.aspx)
-
-    ```
-    sp_renamedb [ @dbname = ] 'old_name' , [ @newname = ] 'new_name'  
-
-    ```
-
-- [HIVE](http://www.tutorialspoint.com/hive/hive_alter_table.htm)
-
-```
-ALTER TABLE name RENAME TO new_name
-```
-
-##### Cloning Table schema without copying data (Create Table Like - CTL)
-Supported directly on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableLike) alone.
-
-```
-CREATE TABLE newEmptyTableWithSchema LIKE realTableWeNeedSchemaFrom;
-```
-
-However, you can achieve a similar result in T-SQL using a `SELECT INTO` statement
-
-```
- SELECT TOP 0 * INTO newEmptyTableWithSchema FROM realTableWeNeedSchemaFrom;
-```
-
-
-##### Creating External Tables
-Supported on [HIVE](http://www.tutorialspoint.com/hive/hive_create_table.htm) and [T-SQL with PolyBase alone](https://msdn.microsoft.com/en-us/library/mt163689.aspx) on SQL Server 16 and Data Warehouse (SQL and Parallel).  
-
-
-##### Creating Table As Select (CTAS)
-Supported on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableAsSelect(CTAS)) and T-SQL for [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt204041.aspx)
-
-##### Creating External Table As Select (CETAS)
-Supported in T-SQL (with PolyBase) on [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt631610.aspx) but **NOT** supported in HIVE.    
-
-Hive supports only **CTAS** with the following ceveats **FULLY** documented on [Apache Hive Confluence Page](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL)  
-
-> CTAS has these restrictions:  
-The target table cannot be a partitioned table.  
-_**The target table cannot be an external table.**_   
-The target table cannot be a list bucketing table.
-
-
-##### Update
-Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms177523.aspx) for internal tables.
-
-> NOTE  
-`UPDATE` is not supported on external tables. Only the following are allowed on external tables.  
-- CREATE and DROP TABLE  
-- CREATE AND DROP STATISTICS  
-- CREATE AND DROP VIEW  
-
->For further information check [Limitations and Restrictions of T-SQL Create External Table](https://msdn.microsoft.com/en-us/library/dn935021.aspx)
-
-Support for [HIVE] is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
-
-
-##### Delete
-Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms189835.aspx) for internal tables.
-> NOTE  
-No `DML` is allowed on external tables.  
-Find more information [here.](https://msdn.microsoft.com/en-us/library/mt631610.aspx)
-
-Support for HIVE is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
-
-
-##### Insert Into Select
-
-Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-InsertingdataintoHiveTablesfromqueries) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms174335.aspx)  
-
-
-##### Rollup, Cube, Grouping Sets
-Supported in [T-SQL](https://technet.microsoft.com/en-us/library/bb522495(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Enhanced+Aggregation,+Cube,+Grouping+and+Rollup)
-
-##### Common Table Expressions (Queries specified in a WITH clause)
-Supported in [T-SQL](https://technet.microsoft.com/en-us/library/ms190766(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Common+Table+Expression)
-
-
-##### User Defined Functions (UDF)  
-Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+UDF) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms191320.aspx) with certain ceveats.  
-
-
-**NOTE**
-> ##### Hive For SQL Users  
-> For customers that are already know SQL, [Horton Works](http://hortonworks.com/) has created a handy Hive
-["Cheat Sheet"](http://hortonworks.com/blog/hive-cheat-sheet-for-sql-users/) for SQL users.
-It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.  
-
-
-> For further readings, these external links could be interesting.
-
-> 1. [Subtle differences between HiveQL and SQL](http://www.wmanalytics.io/blog/list-subtle-differences-between-hiveql-and-sql) by WebMasson Analytics.
-
-> 2. [Difference Between SQL and T-SQL](http://www.differencebetween.net/technology/software-technology/difference-between-sql-and-t-sql/) by www.diferencebetween.net
-
-
 ##### HDI Cluster and Azure Data Lake Store (ADLS) Authentication and Connectivity.  
 - **Authentication:** A certified identity is required in Azure Active Directory (AAD).   
 
@@ -1173,3 +1137,113 @@ On Windows PowerShell
 
 - PFX password:  
 `$certPassword`
+
+
+## Some TSQL HiveQL and ANSI SQL syntax intersections
+
+##### Renaming a table
+Supported on both T-SQL and HIVE with slight differences.
+- [T-SQL](https://msdn.microsoft.com/en-us/library/mt631611.aspx)
+	- SQL DW/PDW
+
+    ```  
+	RENAME OBJECT [ :: ]  [ [ database_name .  [schema_name ] ] . ] | [schema_name . ] ] table_name TO new_table_name [;]  
+
+    ```
+
+    - SQL Server and DB : Use Stored Procedure [sp_renamedb](https://msdn.microsoft.com/en-us/library/ms186217.aspx)
+
+    ```
+    sp_renamedb [ @dbname = ] 'old_name' , [ @newname = ] 'new_name'  
+
+    ```
+
+- [HIVE](http://www.tutorialspoint.com/hive/hive_alter_table.htm)
+
+```
+ALTER TABLE name RENAME TO new_name
+```
+
+##### Cloning Table schema without copying data (Create Table Like - CTL)
+Supported directly on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableLike) alone.
+
+```
+CREATE TABLE newEmptyTableWithSchema LIKE realTableWeNeedSchemaFrom;
+```
+
+However, you can achieve a similar result in T-SQL using a `SELECT INTO` statement
+
+```
+ SELECT TOP 0 * INTO newEmptyTableWithSchema FROM realTableWeNeedSchemaFrom;
+```
+
+
+##### Creating External Tables
+Supported on [HIVE](http://www.tutorialspoint.com/hive/hive_create_table.htm) and [T-SQL with PolyBase alone](https://msdn.microsoft.com/en-us/library/mt163689.aspx) on SQL Server 16 and Data Warehouse (SQL and Parallel).  
+
+
+##### Creating Table As Select (CTAS)
+Supported on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableAsSelect(CTAS)) and T-SQL for [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt204041.aspx)
+
+##### Creating External Table As Select (CETAS)
+Supported in T-SQL (with PolyBase) on [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt631610.aspx) but **NOT** supported in HIVE.    
+
+Hive supports only **CTAS** with the following ceveats **FULLY** documented on [Apache Hive Confluence Page](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL)  
+
+> CTAS has these restrictions:  
+The target table cannot be a partitioned table.  
+_**The target table cannot be an external table.**_   
+The target table cannot be a list bucketing table.
+
+
+##### Update
+Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms177523.aspx) for internal tables.
+
+> NOTE  
+`UPDATE` is not supported on external tables. Only the following are allowed on external tables.  
+- CREATE and DROP TABLE  
+- CREATE AND DROP STATISTICS  
+- CREATE AND DROP VIEW  
+
+>For further information check [Limitations and Restrictions of T-SQL Create External Table](https://msdn.microsoft.com/en-us/library/dn935021.aspx)
+
+Support for [HIVE] is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
+
+
+##### Delete
+Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms189835.aspx) for internal tables.
+> NOTE  
+No `DML` is allowed on external tables.  
+Find more information [here.](https://msdn.microsoft.com/en-us/library/mt631610.aspx)
+
+Support for HIVE is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
+
+
+##### Insert Into Select
+
+Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-InsertingdataintoHiveTablesfromqueries) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms174335.aspx)  
+
+
+##### Rollup, Cube, Grouping Sets
+Supported in [T-SQL](https://technet.microsoft.com/en-us/library/bb522495(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Enhanced+Aggregation,+Cube,+Grouping+and+Rollup)
+
+##### Common Table Expressions (Queries specified in a WITH clause)
+Supported in [T-SQL](https://technet.microsoft.com/en-us/library/ms190766(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Common+Table+Expression)
+
+
+##### User Defined Functions (UDF)  
+Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+UDF) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms191320.aspx) with certain ceveats.  
+
+
+**NOTE**
+> ##### Hive For SQL Users  
+> For customers that are already know SQL, [Horton Works](http://hortonworks.com/) has created a handy Hive
+["Cheat Sheet"](http://hortonworks.com/blog/hive-cheat-sheet-for-sql-users/) for SQL users.
+It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.  
+
+
+> For further readings, these external links could be interesting.
+
+> 1. [Subtle differences between HiveQL and SQL](http://www.wmanalytics.io/blog/list-subtle-differences-between-hiveql-and-sql) by WebMasson Analytics.
+
+> 2. [Difference Between SQL and T-SQL](http://www.differencebetween.net/technology/software-technology/difference-between-sql-and-t-sql/) by www.diferencebetween.net
