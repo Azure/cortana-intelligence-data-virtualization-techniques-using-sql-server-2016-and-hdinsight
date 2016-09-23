@@ -265,7 +265,7 @@ The external table's schema definitions must match the schema of table we are tr
 
 ##### Expand the `Columns` folder in SQL Server Management Studio (SSMS) to examine.   
 
-![Product Table Schema](./assets/media/product-schema-scaled.PNG "Product Table")  
+![Product Table Schema](./assets/media/product-schema-scaled.png "Product Table")  
 
 
 
