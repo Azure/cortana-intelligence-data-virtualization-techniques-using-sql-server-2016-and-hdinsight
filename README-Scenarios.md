@@ -513,27 +513,58 @@ These tuning parameters can be made directly on the xml configuration files or m
 	![Configure YARN Memory Configs](./assets/media/AMBARI-NEW-CONFIG-MGR14.PNG "Configure YARN memory")  
 
 	> IMPORTANT NOTE  
-	> CPU related settings can be modified also via the UI; number of virtual cores, minimum and maximum virtual cores sizes, percentage of physical CPU for all containers on the node. The current values perform well, so no modification is needed for this tutorial.  
+	> CPU related settings can be modified also via the UI  
+	>  
+	> - Number of virtual cores.  
+	> - Minimum and maximum virtual cores sizes  
+	> - Percentage of physical CPU for all containers on the node.  
+	>
+	> The current values perform well. No modifications done for this tutorial.  
 	>
 	> ![CPU related settings](./assets/media/AMBARI-NEW-CONFIG-MGR15.PNG "CPU related settings")
 
+- Update application and log deletion service timer.
+	After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  
+	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
+
 - Download modified client config.  
 Restart YARN service after this modification to validate modifications. After restart, down and save the updated YARN configuration settings.
-![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR15.PNG "Download Client Configs")  
+![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
 
 
 > IMPORTANT NOTE  
-> Set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
+> It is very important to set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
 >
-> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services.
+> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services. Therefore we will copy over the downloaded configurations to
 
-- Isolate different service config changes with Ambari Config Groups.
+#### Override PolyBase's Hadoop configurations with updated files.  
+Unzip the downloaded config files. The MapReduce zip folder has the files of relevance (core-site.xml, mapred-site.xml, hdfs-site.xml)
+
+PolyBase to Hadoop connectivity uses the following configuration levels (in the order).  
+
+1.  Hadoop Configuration folder in PolyBase installation folder on SQL Server.
+1. Configurations set in Ambari  
+1. Configurations set on the VM.
+
+- To persist configurations, overwrite the variables in the PolyBase configuration folder. That way PolyBase uses this as primary.
+	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
+	- Back the following existing files  
+		- hdfs-site.xml
+		- core-site.xml
+		- mapred-site.xml
+	- Copy over the downloaded/updated versions (from Ambari configuration modifications) to this folder.
+	-
+	- Restart SQL Server service.
+		![Select MSSQL Server Service](./assets/media/AMBARI-NEW-CONFIG-MGR17.PNG "Select MSSQL Server Service")  
+
+		Dependent services on the SQL Server will be restarted as well.
+		![Restart PolyBase Services](./assets/media/AMBARI-NEW-CONFIG-MGR18.PNG "Restart PolyBase Services")  
 
 
 #### Possible issues and fixes proposed
 1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
 
-1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For futher information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
+1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For further information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
 
 1. Create NameNode Checkpoint before restarting HDFS service from Ambari
 
@@ -556,11 +587,7 @@ Restart YARN service after this modification to validate modifications. After re
 	Pay attention to the settings you have configured on these other services as one restart overwrites everything. For example, the general memory you have configured for Resource Manager alters the any memory changes in MapReduce2 as well, taking them back to default.  
 
 	**FIX**  
-	- PolyBase to Hadoop connectivity uses the following configuration levels (in the order) for core-site, hdfs-site, mapred-site and yarn-site xmls.
-		1.  Hadoop Configuration folder in PolyBase installation folder on SQL Server.
-		2. Configurations set in Ambari  
-		3. Configurations set on the VM.
-	- To persist configurations, overwrite the variables in the PolyBase configuration folder. That way PolyBase uses this as primary.  
+ 	See [Copy over configs to PolyBase](#copy-over-configs-to-polybase)
 
 1. Unable to access Ambari WebUI as admin
 
@@ -615,7 +642,7 @@ Restart YARN service after this modification to validate modifications. After re
 	**FIX**  
 	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`
 
-#### Data Source
+##### Data Source
 1. AdventureWorks2012.
 
 **Essential House keeping**  
