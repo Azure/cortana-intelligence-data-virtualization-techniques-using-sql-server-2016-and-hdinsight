@@ -927,18 +927,151 @@ materialized on SQL Datawarehouse and results pulled into Spark for further proc
 - Complex joins can be done between Facts and Dimensionals, allowing easier Update and Merge operations.
 
 #### Pipeline  
-![Use Case 2-Architecture](./assets/media/uc2.PNG "HDI with sQL DW Hybrid Analytics")  
+![Use Case 2-Architecture](./assets/media/uc2_2.PNG "HDI with sQL DW Hybrid Analytics")  
 
-#### Resource Deployment  
-Clicking button below creates a new `blade` in Azure portal with the following resources deployed:  
-
+#### Resource Deployment    
+This use case requires the following resources.
 1. One Azure SQL Data Warehouse
-1. A four node HDInsight cluster - _two head nodes and two worker nodes._
+1. One HDInsight cluster
+1. One Azure Data Lake Store
+1. One Service Principle Identity (SPI)
+1. One certificate for access control  
+
+##### One Click Deployment  
+Clicking button below creates a new `blade` in Azure portal with the following resource(s) deployed:
+
+- One Azure SQL Data Warehouse  
 
 <a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC2.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
+
+##### Manual Deployment  
+
+###### HDI Cluster and Azure Data Lake Store (ADLS) Authentication and Connectivity.  
+- **Authentication:** A certified identity is required in Azure Active Directory (AAD).   
+
+- **Connectivity:** ADLS exposes a web-based RESTful interface to allows calls to be made.   
+	- Calls need to be made with a JSON Web Token (JWT) that is obtained for identity from AAD.
+
+- **Service Principle Identity (SPI):**  A headless user in the AAD that is associated with a certificate.  
+
+- **Credential Creation:** During the creation of the HDI Cluster, a SPI (and its certificate) is created in AAD and stored in the cluster.
+
+- **Runtime Processing:** At runtime, the web-credential is used for the interaction. The associated web-token is passed to AAD which exchanges it with a JWT. The JWT is used to make the actual calls.
+
+- **Data Access:** Different users can interact with the ADLS using the same SPI. Hence the SPI needs access to your data.
+	- Data is read and written by the SPI.
+
+##### Create the Certificate and Service Principal Identity  
+
+
+###### Requirements
+
+1. An Active [Azure](https://azure.microsoft.com/) subscription.  
+1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands.   
+
+
+If you have created a SPI and certificate before, feel free to jump to Step 4 below after Step 1, otherwise continue to create one quickly.  
+
+###### 1. Login in to Azure and Add Subscription.  
+
+- Open Windows PowerShell
+
+- Add Azure Subscription  
+
+	`Add-AzureRmAccount`  
+
+OR  
+
+- Login into Azure if you have previously added your Azure subscription.  
+
+	` Login-AzureRmAccount`
+
+
+###### 2. Create a PFX certificate
+
+On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
+
+```
+$certFolder = "C:\certificates"
+$certFilePath = "$certFolder\certFile.pfx"
+$certStartDate = (Get-Date).Date
+$certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
+$certEndDate = $certStartDate.AddYears(1)
+$certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
+$certName = "HDI-ADLS-SPI"
+$certPassword = "new_password_here"
+$certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
+
+mkdir $certFolder
+
+$cert = New-SelfSignedCertificate -DnsName $certName -CertStoreLocation cert:\CurrentUser\My -KeySpec KeyExchange -NotAfter $certEndDate -NotBefore $certStartDate
+$certThumbprint = $cert.Thumbprint
+$cert = (Get-ChildItem -Path cert:\CurrentUser\My\$certThumbprint)
+
+Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswordSecureString
+
+```
+
+
+###### 3. Create the Service Principal Identity (SPI)  
+Using the earlier created certificate, create your SPI.
+
+```
+$clusterName = "your_new_hdi_cluster_name"
+$certificatePFX = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certFilePath, $certPasswordSecureString)
+$credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
+```
+
+Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
+```
+$application = New-AzureRmADApplication -DisplayName $certName -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Use this cmdlet, if you installed Azure PowerShell 1.0
+```
+$application = New-AzureRmADApplication -DisplayName $certName `
+                        -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
+                        -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
+                        -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Retrieve the Service Principal details
+```
+$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
+```
+
+###### 4. Retrieve SPI information needed for HDI deployment
+
+On Windows PowerShell
+
+- Application ID:  
+`$servicePrincipal.ApplicationId`
+
+- Object ID:  
+`$servicePrincipal.Id`
+
+- AAD Tenant ID:  
+`(Get-AzureRmContext).Tenant.TenantId`
+
+- Base-64 PFX file contents:  
+`[System.Convert]::ToBase64String((Get-Content $certFilePath -Encoding Byte))`
+
+- PFX password:  
+`$certPassword`
+
+
+###### Deploy Azure Data Lake Store from Portal
+Follow instructions on [Getting Started with Azure Data Lake Store](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#signup)  
+
+###### Deploy a Spark HDInsight Cluster with Azure Data Lake Store as secondary storage from Portal
+Using the SPI and Certificate created above, follow instructions to [Create an HDInsight cluster with Data Lake Store using Azure Portal](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-hdinsight-hadoop-use-portal/).  
+
+> IMPORTANT NOTE   
+**Create a Spark cluster instead of a Hadoop Cluster.**  
+
 #### Data Source
-1. We will be using the **FactInternetSale** table from the **AdventureWorks** Dataset.
+1. **AdventureWorks** Dataset.
 
 > **Columns -** `ProductKey, OrderDateKey, DueDateKey, ShipDateKey, CustomerKey, PromotionKey, CurrencyKey, SalesTerritoryKey, SalesOrderNumber, SalesOrderLineNumber, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber
 `  
@@ -1120,120 +1253,6 @@ scala> val results = hiveContext.sql("SELECT * FROM HDI_FactInternetSales AS A L
 ```
 scala> results.show
 ```
-
-##### HDI Cluster and Azure Data Lake Store (ADLS) Authentication and Connectivity.  
-- **Authentication:** A certified identity is required in Azure Active Directory (AAD).   
-
-- **Connectivity:** ADLS exposes a web-based RESTful interface to allows calls to be made.   
-	- Calls need to be made with a JSON Web Token (JWT) that is obtained for identity from AAD.
-
-- **Service Principle Identity (SPI):**  A headless user in the AAD that is associated with a certificate.  
-
-- **Credential Creation:** During the creation of the HDI Cluster, a SPI (and its certificate) is created in AAD and stored in the cluster.
-
-- **Runtime Processing:** At runtime, the web-credential is used for the interaction. The associated web-token is passed to AAD which exchanges it with a JWT. The JWT is used to make the actual calls.
-
-- **Data Access:** Different users can interact with the ADLS using the same SPI. Hence the SPI needs access to your data.
-	- Data is read and written by the SPI.
-
-##### Create the Certificate and Service Principal Identity  
-
-
-###### Requirements
-
-1. An Active [Azure](https://azure.microsoft.com/) subscription.  
-1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands.   
-
-
-If you have created a SPI and certificate before, feel free to jump to Step 4 below after Step 1, otherwise continue to create one quickly.  
-
-###### 1. Login in to Azure and Add Subscription.  
-
-- Power Windows PowerShell
-
-- Add Azure Subscription  
-
-	`Add-AzureRmAccount`  
-
-OR  
-
-- Login into Azure if you have previously added your Azure subscription.  
-
-	` Login-AzureRmAccount`
-
-
-###### 2. Create a PFX certificate
-
-On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
-
-```
-$certFolder = "C:\certificates"
-$certFilePath = "$certFolder\certFile.pfx"
-$certStartDate = (Get-Date).Date
-$certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
-$certEndDate = $certStartDate.AddYears(1)
-$certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
-$certName = "HDI-ADLS-SPI"
-$certPassword = "new_password_here"
-$certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
-
-mkdir $certFolder
-
-$cert = New-SelfSignedCertificate -DnsName $certName -CertStoreLocation cert:\CurrentUser\My -KeySpec KeyExchange -NotAfter $certEndDate -NotBefore $certStartDate
-$certThumbprint = $cert.Thumbprint
-$cert = (Get-ChildItem -Path cert:\CurrentUser\My\$certThumbprint)
-
-Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswordSecureString
-
-```
-
-
-###### 3. Create the Service Principal Identity (SPI)  
-Using the earlier created certificate, create your SPI.
-
-```
-$clusterName = "your_new_hdi_cluster_name"
-$certificatePFX = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certFilePath, $certPasswordSecureString)
-$credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
-```
-
-Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
-```
-$application = New-AzureRmADApplication -DisplayName $certName -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
-```
-
-Use this cmdlet, if you installed Azure PowerShell 1.0
-```
-$application = New-AzureRmADApplication -DisplayName $certName `
-                        -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
-                        -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
-                        -StartDate $certStartDate -EndDate $certEndDate
-```
-
-Retrieve the Service Principal details
-```
-$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
-```
-
-###### 4. Retrieve SPI information needed for HDI deployment
-
-On Windows PowerShell
-
-- Application ID:  
-`$servicePrincipal.ApplicationId`
-
-- Object ID:  
-`$servicePrincipal.Id`
-
-- AAD Tenant ID:  
-`(Get-AzureRmContext).Tenant.TenantId`
-
-- Base-64 PFX file contents:  
-`[System.Convert]::ToBase64String((Get-Content $certFilePath -Encoding Byte))`
-
-- PFX password:  
-`$certPassword`
-
 
 ## Some TSQL HiveQL and ANSI SQL syntax intersections
 
