@@ -380,7 +380,7 @@ place.
 #### Resource Deployment  
 
 Divided into two stages.  
-##### Automated deploy:  
+##### One Click deploy:  
 
 Clicking button below creates a new `blade` in Azure portal with the following resources deployed:
 
@@ -390,7 +390,47 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 ##### Extra manual deploy:
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
+###### Start PolyBase service in deployed SQL Server 2016  
+The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase service is tied to the identification of the original installation causing the service not to start automatically. You would need to reinstall PolyBase as a feature on the SQL Server instance tied to your authentication. This will walk you through that process.  
 
+1.  Remove PolyBase as a feature:
+	- Go to **Program and Features**  on the SQL Server VM _**(Control Panel\Programs\Programs and Features)**_  
+
+	- Select the version of Microsoft SQL Server 2016 installed (64bit in this case) and click on **Uninstall/Change**
+	![Uninstall/Change PolyBase](./assets/media/POLYBASE-RESTART1.PNG "Change the MSSQL installation to remove PolyBase")  
+
+	- Click on **Remove**
+	![Click on Remove on MSSQLSERVER Instance](./assets/media/POLYBASE-RESTART2.PNG "Click on Remove on MSSQLSERVER Instance")  
+
+	- Select **MSSQLSERVER** Instance and click on **Next** to proceed
+	![Select MSSQLSERVER Instance](./assets/media/POLYBASE-RESTART3.PNG "Select MSSQLSERVER Instance")
+
+	- Select **PolyBase Query Service for External Data** and keep clicking on **Next** to remove PolyBase.
+	![Remove PolyBase from MSSQLSERVER Instance](./assets/media/POLYBASE-RESTART4.PNG "Remove PolyBase from MSSQLSERVER Instance")
+
+	- Remove
+	![Final PolyBase removal](./assets/media/POLYBASE-RESTART5.PNG "Final PolyBase removal")
+
+At this point PolyBase is completely uninstalled from the SQL Server 2016. Now we will reinstall and start services.
+
+2. Reinstall PolyBase:
+A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.   
+	- Navigate to **C:\TUTORIAL_EXTRAS_OPEN_ME\SQLServer_13.0_Full** on the VM and click on **setup** icon.
+	![Start PolyBase Setup](./assets/media/POLYBASE-RESTART6.PNG "Starting PolyBase Setup")  
+
+	- Go to **Installation** on the left tab and then click on **New SQL Server stand-alone installation or add features to an existing installation**
+		![Add PolyBase as a feature](./assets/media/POLYBASE-RESTART7.PNG "Add PolyBase as a feature")
+
+	- Click through to **Installation Type** on the left column and then select **MSSQLSERVER** as the instance you would love to add PolyBase on to.
+	![Select MSSQLSERVER as Instance for PolyBase](./assets/media/POLYBASE-RESTART8.PNG "Select MSSQLSERVER as Instance for PolyBase")
+
+	- Check the **PolyBase Query Service for External Data** box and click **Next**
+	![Select PolyBase as a feature](./assets/media/POLYBASE-RESTART9.PNG "Select PolyBase as a feature")  
+
+
+
+
+###### Install HDP Hadoop Sandbox
 1. Login on to [Azure Portal](https://portal.azure.com)  
 
 1. Navigate to Azure Market Place and search for **"Hadoop"**. Select the HortonWorks Sandbox.  
@@ -649,7 +689,7 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 > From SSMS, you may encounter the following error message while trying to export your tables.
 >
 >  
-> Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.`  
+> Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.  
 >
 > The following configurations must be set correctly.
 > 1. PolyBase must be allowed to export external tables.
@@ -659,6 +699,7 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 
 
 - Allow PolyBase to export external tables  
+
 ```
 sp_configure 'allow polybase export', 1;
 RECONFIGURE;
