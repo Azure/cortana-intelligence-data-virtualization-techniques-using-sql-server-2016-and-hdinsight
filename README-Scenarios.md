@@ -1043,14 +1043,17 @@ Follow instructions on [Getting Started with Azure Data Lake Store](https://azur
 ###### Deploy a Spark HDInsight Cluster with Azure Data Lake Store as secondary storage from Portal
 Using the SPI and Certificate created above, follow instructions to [Create an HDInsight cluster with Data Lake Store using Azure Portal](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-hdinsight-hadoop-use-portal/).  
 
+
 > IMPORTANT NOTE   
 **Create a Spark cluster instead of a Hadoop Cluster.**  
 
-#### Data Source
-1. **AdventureWorks** Dataset.
+###### Manually load AdventureWorks sample data.  
+Follow link to load [Sample data into the deployed SQL Data Warehouse](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/)  .
 
-> **Columns -** `ProductKey, OrderDateKey, DueDateKey, ShipDateKey, CustomerKey, PromotionKey, CurrencyKey, SalesTerritoryKey, SalesOrderNumber, SalesOrderLineNumber, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber
-`  
+
+#### Data Source
+1. **AdventureWorks** Dataset (Loaded manually above)
+  
 
 #### Start the spark shell pointing to the JDBC connector.  
 With the JDBC defined variables, connect and load data from the SQL DW table.  
