@@ -66,16 +66,16 @@ We assume the following prerequisites are fulfilled -
 	- Hadoop Cluster for compute push down
 	- HDInsight Spark/Hive Cluster for table projections.  
 
-![Use Case 1-Architecture](./assets/media/HIGHLEVEL-ARCH1.PNG "On-Prem SQL Server 2016 and HDInsight/Hadoop")
+	![Use Case 1-Architecture Overview](./assets/media/HIGHLEVEL-ARCH1.PNG "Use Case 1-Architecture Overview")  
 
 2. Azure Cloud Only scenario with HDInsight Spark/Hive Cluster and Azure SQL DW.
 
-![Use Case 2-Architecture](./assets/media/HIGHLEVEL-ARCH2.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")
+	![Use Case 2-Architecture Overview](./assets/media/HIGHLEVEL-ARCH2.PNG "Use Case 2-Architecture Overview")
 
 ## Table of Content
-1. [Hybrid Data Analytics from On-Premises SQL Server to Cloud (HDInsight and Hadoop MapReduce) using PolyBase for query scale-out and processing.](#hybrid-onprem-sqlserver16-to-cloud-data-virtualization-using-polybase)
+1. [Use Case 1 - Hybrid Data Analytics from On-Premises SQL Server to Cloud (HDInsight and Hadoop MapReduce) using PolyBase for query scale-out and processing.](#hybrid-onprem-sqlserver16-to-cloud-data-virtualization-using-polybase)
 
-1. [Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
+1. [Use Case 2 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
 
 1. [Troubleshooting](#troubleshooting)
 
@@ -1232,7 +1232,7 @@ scala> results.show
 
 ## Troubleshooting  
 
-#### Possible issues and fixes proposed
+#### Some issues and fixes encountered when integrating HDP Hadoop and PolyBase.
 1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
 
 1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For further information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
