@@ -59,7 +59,8 @@ We assume the following prerequisites are fulfilled -
 
 1. An Active [Azure](https://azure.microsoft.com/) subscription.
 
-1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands
+1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands  
+
 ## High Level Use Case(s) Architecture
 1. Hybrid scenarios with On-Prem SQL Server 2016 and the following:
 	- Hadoop Cluster for compute push down
