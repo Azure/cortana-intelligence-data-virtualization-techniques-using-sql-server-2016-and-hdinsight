@@ -1232,7 +1232,7 @@ scala> results.show
 
 ## Troubleshooting  
 
-#### Some issues and fixes encountered when integrating HDP Hadoop and PolyBase.
+#### Some issues and recommended fixes when integrating HDP 2.X Hadoop Sandbox and PolyBase.
 1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
 
 1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For further information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
