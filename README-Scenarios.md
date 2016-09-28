@@ -60,11 +60,26 @@ We assume the following prerequisites are fulfilled -
 1. An Active [Azure](https://azure.microsoft.com/) subscription.
 
 1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands
+## High Level Use Case(s) Architecture
+1. Hybrid scenarios with On-Prem SQL Server 2016 and the following:
+	- Hadoop Cluster for compute push down
+	- HDInsight Spark/Hive Cluster for table projections.  
 
-## Use Cases
+![Use Case 1-Architecture](./assets/media/HIGHLEVEL-ARCH1.PNG "On-Prem SQL Server 2016 and HDInsight/Hadoop")
+
+2. Azure Cloud Only scenario with HDInsight Spark/Hive Cluster and Azure SQL DW.
+
+![Use Case 2-Architecture](./assets/media/HIGHLEVEL-ARCH2.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")
+
+## Table of Content
 1. [Hybrid Data Analytics from On-Premises SQL Server to Cloud (HDInsight and Hadoop MapReduce) using PolyBase for query scale-out and processing.](#hybrid-onprem-sqlserver16-to-cloud-data-virtualization-using-polybase)
+
 1. [Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
-1. [Some T-SQL, HiveQL and ANSI SQL syntax intersections](#some-tsql-hiveql-and-ansi-sql-syntax-intersections)
+
+1. [Troubleshooting](#troubleshooting)
+
+1. [Appendix](#appendix)
+
 
 ## Hybrid OnPrem SQLServer16 To Cloud Data Virtualization Using PolyBase
 #### Use Case Summary
@@ -427,8 +442,8 @@ A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.
 	- Check the **PolyBase Query Service for External Data** box and click **Next**
 	![Select PolyBase as a feature](./assets/media/POLYBASE-RESTART9.PNG "Select PolyBase as a feature")  
 
-
-
+	- Make sure that PolyBase services start automatically and are running normally; without affecting any SQL Service.
+		![Confirm PolyBase and MSSQLSERVER Services are running](./assets/media/POLYBASE-RESTART10.PNG "Confirm PolyBase and MSSQLSERVER Services are running.")  
 
 ###### Install HDP Hadoop Sandbox
 1. Login on to [Azure Portal](https://portal.azure.com)  
@@ -600,87 +615,6 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 		Dependent services on the SQL Server will be restarted as well.
 		![Restart PolyBase Services](./assets/media/AMBARI-NEW-CONFIG-MGR18.PNG "Restart PolyBase Services")  
 
-
-#### Possible issues and fixes proposed
-1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
-
-1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For further information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
-
-1. Create NameNode Checkpoint before restarting HDFS service from Ambari
-
-	To avoid Namenode corruption and/or crash, it is best to put your Namenode(s) in safe mode before restarting HDFS service.  
-
-	You may observe a similar **WARNING** like outlined below
-
-	> The last HDFS checkpoint is older than 12 hours. Make sure that you have taken a checkpoint before proceeding. Otherwise, the NameNode(s) can take a very long time to start up.
-
-	**FIX**  
-	- Login to the NameNode host via ssh  
-
-	- Put the NameNode in Safe Mode (read-only mode):  
-	`sudo su hdfs -l -c 'hdfs dfsadmin -safemode enter'`  
-
-	- Create a Checkpoint once in safemode:  
-	`sudo su hdfs -l -c 'hdfs dfsadmin -saveNamespace'`
-
-1. Changing the configuration on a service (for example YARN) requires the service and most often than not other affected services, like Zookeeper and Oozie, restarted as well.   
-	Pay attention to the settings you have configured on these other services as one restart overwrites everything. For example, the general memory you have configured for Resource Manager alters the any memory changes in MapReduce2 as well, taking them back to default.  
-
-	**FIX**  
- 	See [Copy over configs to PolyBase](#copy-over-configs-to-polybase)
-
-1. Unable to access Ambari WebUI as admin
-
-	**FIX**  
-	See [Activate access to Ambari](#activate-access-to-ambari) above.  
-
-1. Unable to parse HDP version error
-	```
-		java.lang.IllegalArgumentException: Unable to parse '/hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.gz#mr-framework' as a URI,\
-	 check the setting for mapreduce.application.framework.path
-	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:181)
-	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setMRFrameworkClasspath(MRApps.java:206)
-	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setClasspath(MRApps.java:258)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.getInitialClasspath(TaskAttemptImpl.java:621)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createCommonContainerLaunchContext(TaskAttemptImpl.java:757)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createContainerLaunchContext(TaskAttemptImpl.java:821)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1557)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1534)
-	        at org.apache.hadoop.yarn.state.StateMachineFactory$SingleInternalArc.doTransition(StateMachineFactory.java:362)
-	        at org.apache.hadoop.yarn.state.StateMachineFactory.doTransition(StateMachineFactory.java:302)
-	        at org.apache.hadoop.yarn.state.StateMachineFactory.access$300(StateMachineFactory.java:46)
-	        at org.apache.hadoop.yarn.state.StateMachineFactory$InternalStateMachine.doTransition(StateMachineFactory.java:448)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:1084)
-	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:145)
-	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1368)
-	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1360)
-	        at org.apache.hadoop.yarn.event.AsyncDispatcher.dispatch(AsyncDispatcher.java:183)
-	        at org.apache.hadoop.yarn.event.AsyncDispatcher$1.run(AsyncDispatcher.java:109)
-	        at java.lang.Thread.run(Thread.java:745)
-	Caused by: java.net.URISyntaxException: Illegal character in path at index 11: /hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.
-	gz#mr-framework
-	        at java.net.URI$Parser.fail(URI.java:2829)
-	        at java.net.URI$Parser.checkChars(URI.java:3002)
-	        at java.net.URI$Parser.parseHierarchical(URI.java:3086)
-	        at java.net.URI$Parser.parse(URI.java:3044)
-	      at java.net.URI.<init>(URI.java:595)
-	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:179)
-	        ... 18 more
-	```
-
-	**FIX**  
-		- Set `hdp.version` on SQL Server in PolyBase mapred-site.xml (_C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf_)  
-
-			<property>
-	 			<name>hdp.version</name>
- 				<value>2.4.0.0-169</value>
- 			</property>
-
-1. Inability to query a Namenode in Safe mode  
-	> Cannot execute the query "Remote Query" against OLE DB provider "SQLNCLI11" for linked server "(null)". EXTERNAL TABLE access failed due to internal error: 'Java exception raised on call to JobSubmitter_SubmitJob: Error [Cannot delete /user/pdw_user/.staging/job_1474057623050_0031. Name node is in safe mode.  
-
-	**FIX**  
-	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`
 
 ##### Data Source
 1. AdventureWorks2012.
@@ -1295,7 +1229,92 @@ scala> val results = hiveContext.sql("SELECT * FROM HDI_FactInternetSales AS A L
 scala> results.show
 ```
 
-## Some TSQL HiveQL and ANSI SQL syntax intersections
+## Troubleshooting  
+
+#### Possible issues and fixes proposed
+1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
+
+1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For further information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
+
+1. Create NameNode Checkpoint before restarting HDFS service from Ambari
+
+	To avoid Namenode corruption and/or crash, it is best to put your Namenode(s) in safe mode before restarting HDFS service.  
+
+	You may observe a similar **WARNING** like outlined below
+
+	> The last HDFS checkpoint is older than 12 hours. Make sure that you have taken a checkpoint before proceeding. Otherwise, the NameNode(s) can take a very long time to start up.
+
+	**FIX**  
+	- Login to the NameNode host via ssh  
+
+	- Put the NameNode in Safe Mode (read-only mode):  
+	`sudo su hdfs -l -c 'hdfs dfsadmin -safemode enter'`  
+
+	- Create a Checkpoint once in safemode:  
+	`sudo su hdfs -l -c 'hdfs dfsadmin -saveNamespace'`
+
+1. Changing the configuration on a service (for example YARN) requires the service and most often than not other affected services, like Zookeeper and Oozie, restarted as well.   
+	Pay attention to the settings you have configured on these other services as one restart overwrites everything. For example, the general memory you have configured for Resource Manager alters the any memory changes in MapReduce2 as well, taking them back to default.  
+
+	**FIX**  
+ 	See [Copy over configs to PolyBase](#copy-over-configs-to-polybase)
+
+1. Unable to access Ambari WebUI as admin
+
+	**FIX**  
+	See [Activate access to Ambari](#activate-access-to-ambari) above.  
+
+1. Unable to parse HDP version error
+	```
+		java.lang.IllegalArgumentException: Unable to parse '/hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.gz#mr-framework' as a URI,\
+	 check the setting for mapreduce.application.framework.path
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:181)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setMRFrameworkClasspath(MRApps.java:206)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setClasspath(MRApps.java:258)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.getInitialClasspath(TaskAttemptImpl.java:621)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createCommonContainerLaunchContext(TaskAttemptImpl.java:757)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createContainerLaunchContext(TaskAttemptImpl.java:821)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1557)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1534)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory$SingleInternalArc.doTransition(StateMachineFactory.java:362)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory.doTransition(StateMachineFactory.java:302)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory.access$300(StateMachineFactory.java:46)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory$InternalStateMachine.doTransition(StateMachineFactory.java:448)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:1084)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:145)
+	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1368)
+	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1360)
+	        at org.apache.hadoop.yarn.event.AsyncDispatcher.dispatch(AsyncDispatcher.java:183)
+	        at org.apache.hadoop.yarn.event.AsyncDispatcher$1.run(AsyncDispatcher.java:109)
+	        at java.lang.Thread.run(Thread.java:745)
+	Caused by: java.net.URISyntaxException: Illegal character in path at index 11: /hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.
+	gz#mr-framework
+	        at java.net.URI$Parser.fail(URI.java:2829)
+	        at java.net.URI$Parser.checkChars(URI.java:3002)
+	        at java.net.URI$Parser.parseHierarchical(URI.java:3086)
+	        at java.net.URI$Parser.parse(URI.java:3044)
+	      at java.net.URI.<init>(URI.java:595)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:179)
+	        ... 18 more
+	```
+
+	**FIX**  
+		- Set `hdp.version` on SQL Server in PolyBase mapred-site.xml (_C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf_)  
+
+			<property>
+	 			<name>hdp.version</name>
+ 				<value>2.4.0.0-169</value>
+ 			</property>
+
+1. Inability to query a Namenode in Safe mode  
+	> Cannot execute the query "Remote Query" against OLE DB provider "SQLNCLI11" for linked server "(null)". EXTERNAL TABLE access failed due to internal error: 'Java exception raised on call to JobSubmitter_SubmitJob: Error [Cannot delete /user/pdw_user/.staging/job_1474057623050_0031. Name node is in safe mode.  
+
+	**FIX**  
+	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`  
+
+## Appendix  
+
+### Some TSQL HiveQL and ANSI SQL syntax intersections
 
 ##### Renaming a table
 Supported on both T-SQL and HIVE with slight differences.
