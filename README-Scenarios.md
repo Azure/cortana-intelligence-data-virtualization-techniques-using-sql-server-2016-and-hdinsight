@@ -407,7 +407,14 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 ##### Extra manual deploy:
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
 ###### Start PolyBase service in deployed SQL Server 2016  
-The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase service is tied to the identification of the original installation causing the service not to start automatically. You would need to reinstall PolyBase as a feature on the SQL Server instance tied to your authentication. This will walk you through that process.  
+The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase services (Data Movement and Engine Services) are tied to the network identification of the original installation, causing both services not to start automatically.
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE1.PNG "PolyBase Service fails to start on deploy") 	
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE2.PNG "PolyBase Service fails to start on deploy")
+You would need to reinstall PolyBase as a feature on the SQL Server instance tied to your authentication.  
+
+The following will walk you through the reinstallation process using the SQL Server ISO that is pre-loaded on the VM.  
 
 1.  Remove PolyBase as a feature:
 	- Go to **Program and Features**  on the SQL Server VM _**(Control Panel\Programs\Programs and Features)**_  
@@ -1053,7 +1060,7 @@ Follow link to load [Sample data into the deployed SQL Data Warehouse](https://a
 
 #### Data Source
 1. **AdventureWorks** Dataset (Loaded manually above)
-  
+
 
 #### Start the spark shell pointing to the JDBC connector.  
 With the JDBC defined variables, connect and load data from the SQL DW table.  
