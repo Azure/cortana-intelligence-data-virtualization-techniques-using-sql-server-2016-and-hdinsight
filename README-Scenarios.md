@@ -407,9 +407,16 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 ##### Extra manual deploy:
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
 ###### Start PolyBase service in deployed SQL Server 2016  
-The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase services (Data Movement and Engine Services) are tied to the network identification of the original installation, causing both services not to start automatically.
+The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase services (Data Movement and Engine Services) are tied to the network identification of the original installation, causing both services not to start automatically. Trying to start the service manually gives an error.
 
-![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE1.PNG "PolyBase Service fails to start on deploy") 	
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-RESTART11.PNG "PolyBase Service fails to start on deploy")
+
+Let's walk through restarting PolyBase service.
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE1.PNG "PolyBase Service fails to start on deploy")
+
+
 
 ![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE2.PNG "PolyBase Service fails to start on deploy")
 You would need to reinstall PolyBase as a feature on the SQL Server instance tied to your authentication.  
@@ -450,8 +457,23 @@ A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.
 	- Check the **PolyBase Query Service for External Data** box and click **Next**
 	![Select PolyBase as a feature](./assets/media/POLYBASE-RESTART9.PNG "Select PolyBase as a feature")  
 
+	- Select SQL Server as a standalone instance
+		![Single PolyBase Instance](./assets/media/POLYBASE-RESTART12.PNG "Single PolyBase Instance.")  
+
+	- Continue to Install
+		![Single PolyBase Instance](./assets/media/POLYBASE-RESTART13.PNG "Single PolyBase Instance.")  
+
+	- Final confirmation
+		![Single PolyBase Instance](./assets/media/POLYBASE-RESTART14.PNG "Single PolyBase Instance.")  
+
 	- Make sure that PolyBase services start automatically and are running normally; without affecting any SQL Service.
 		![Confirm PolyBase and MSSQLSERVER Services are running](./assets/media/POLYBASE-RESTART10.PNG "Confirm PolyBase and MSSQLSERVER Services are running.")  
+
+###### Mount the  AdventureWorks Databases
+It is possible when you log on to the virtual machine, the databases will be in **"Recovery Pending"** mode.
+![Databases in Recovery State](./assets/media/DB-RECOVERY1.PNG "Databases in Recovery State")
+
+To fix this, navigate to **C:\LOG**, delete all the old logs and restart MSSQLSERVER service.
 
 ###### Install HDP Hadoop Sandbox
 1. Login on to [Azure Portal](https://portal.azure.com)  
