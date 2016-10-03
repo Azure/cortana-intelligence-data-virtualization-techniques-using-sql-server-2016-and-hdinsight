@@ -520,7 +520,7 @@ via the following steps:
 
 1. Finally run command  
 `ambari-agent restart`
-1. Point browser to http://<hostname/ipaddress>:8088  
+1. Point browser to `http://<hostname/ipaddress>:8088`  
 	- Enter the user "admin" and put the password you set up (via ssh on VM)
 
 
