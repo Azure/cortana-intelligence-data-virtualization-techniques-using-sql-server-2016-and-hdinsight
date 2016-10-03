@@ -1094,8 +1094,8 @@ Follow link to load [Sample data into the deployed SQL Data Warehouse](https://a
 Generate a historical **VIEW** of our sales data until last year.  
 
 ```
--- Creating Historical Data as View
-CREATE VIEW HistoricalSales
+-- Creating Historical Sales Data as View (ie, Avoid materializing the results)
+CREATE VIEW SalesFromPastYears
 AS
 SELECT
     [SalesOrderNumber]
@@ -1137,11 +1137,6 @@ scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1
 scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"  
 ```
 
-```
-scala> val table = "FactInternetSales"
-```
-
-
 **NOTE**  
 Since our exercise implements a hybrid query harmonization between SQL DW and NoSQL, we will use the hiveContext. This will give us the SparkSQL commands and also Hive functionalities that will
 let use perform joins. We need to do this because temporary tables are registered in-memory and attached to a specific SQLContext.
@@ -1169,132 +1164,147 @@ scala> val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
 scala> import hiveContext.implicits._
 ```
 
-- Fetch data from SQL Data Warehouse
+- Fetch Historical Sales data from SQL Data Warehouse
+Right now we can materialize a **VIEW** of our  Historical Sales and pull it in like a regular SQL table using SparkSQL.  
+
+> IMPORTANT NOTE  
+> **dbo.SalesFromPastYears** is a **VIEW** (not a TABLE) on SQL Data Warehouse side.  
+
 
 ```
-scala> val dw_factInternetSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()
+scala>  val table = "(SELECT * FROM dbo.SalesFromPastYears) AS HistoricalSales"
 ```
 
-To confirm a success connection, we should get a description of the columns of the table **FactInternetSales** as a **dataframe** `df`  
-
-> df: org.apache.spark.sql.DataFrame = [ProductKey: int, OrderDateKey: int, DueDateKey: int, ShipDateKey: int, CustomerKey: int, PromotionKey: int, CurrencyKey: int, SalesTerritoryKey: int, SalesOrderNumber: string, SalesOrderLineNumber: int, RevisionNumber: int, OrderQuantity: int, UnitPrice: decimal(19,4), ExtendedAmount: decimal(19,4), UnitPriceDiscountPct: double, DiscountAmount: double, ProductStandardCost: decimal(19,4), TotalProductCost: decimal(19,4), SalesAmount: decimal(19,4), TaxAmt: decimal(19,4), Freight: decimal(19,4), CarrierTrackingNumber: string, CustomerPONumber: string]
-
-You can view the data in `dw_factinternetsales` by a call to action `.show`. This will display the **top 20 rows** by fetching results from the executors back to the driver node.
+Now fetch data.  
 
 ```
-scala> dw_factInternetSales.show
+scala> val dwHistoricalSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()
 ```
 
-To view the dataframe schema.  
 
-```
-scala> dw_factInternetSales.printSchema
-```
+To confirm a success connection, we should get a description of the columns of the table **HistoricalSales** as a **dataframe** `dwHistoricalSales`
 
-You should a similar output as the following:  
-
->root  
- |-- ProductKey: integer (nullable = false)   
- |-- OrderDateKey: integer (nullable = false)  
- |-- DueDateKey: integer (nullable = false)  
- |-- ShipDateKey: integer (nullable = false)  
- |-- CustomerKey: integer (nullable = false)  
- |-- PromotionKey: integer (nullable = false)  
- |-- CurrencyKey: integer (nullable = false)  
- |-- SalesTerritoryKey: integer (nullable = false)  
- |-- SalesOrderNumber: string (nullable = false)  
- |-- SalesOrderLineNumber: integer (nullable = false)  
- |-- RevisionNumber: integer (nullable = false)  
- |-- OrderQuantity: integer (nullable = false)  
- |-- UnitPrice: decimal(19,4) (nullable = false)  
- |-- ExtendedAmount: decimal(19,4) (nullable = false)  
- |-- UnitPriceDiscountPct: double (nullable = false)  
- |-- DiscountAmount: double (nullable = false)  
- |-- ProductStandardCost: decimal(19,4) (nullable = false)  
- |-- TotalProductCost: decimal(19,4) (nullable = false)  
- |-- SalesAmount: decimal(19,4) (nullable = false)  
- |-- TaxAmt: decimal(19,4) (nullable = false)  
- |-- Freight: decimal(19,4) (nullable = false)  
- |-- CarrierTrackingNumber: string (nullable = true)  
- |-- CustomerPONumber: string (nullable = true)  
+> dwHistoricalSales: org.apache.spark.sql.DataFrame = [SalesOrderNumber: string, SalesOrderLineNumber: int, ProductName: string, SalesTerritoryCountry: string, OrderQuantity: int, UnitPrice: decimal(19,4), ExtendedAmount: decimal(19,4), SalesAmount: decimal(19,4), OrderDate: date]
 
 
-Now we will register our dataframe as a table in our SQLContext i.e. making it queriable like another relational table  
-```
-scala> dw_factInternetSales.registerTempTable("DW_FactInternetSales")
-```
+You can view the data in `dwHistoricalSales` by a call to action `.show`. This will display the **top 20 rows** by fetching results from the executors back to the driver node.
 
-We now have a queriable SQL Data Warehouse table from a Spark SQLContextSQL. Table is registered as a temporary table and has all SQL commands available to SQLContext.  
-To verify the data, a quick select will show this.  
 
-```
-scala>  hiveContext.sql("SELECT * FROM DW_FactInternetSales LIMIT 10").show
-```
+  ```
+  scala> dwHistoricalSales.show
+  ```
 
-Next we want to pull our NoSQL data.
+  To view the dataframe schema.  
 
-- Fetch NoSQL Data from HDInsight (from Blob Storage) via HiveContext
+  ```
+  scala> dwHistoricalSales.printSchema
+  ```
 
-Spark gets Hive for free using the HiveContext. To work with Hive (our NoSQL data is imported using a HiveContext),
-we must create a HiveContext.   
+  You should a similar output as the following:  
 
-```
-scala>  val hdi_factInternetSales = hiveContext.jsonFile("wasb://<your_storage_name>@<your_storage_account>.blob.core.windows.net/FactInternetSales.json")
-```
+  >root
+  	|-- SalesOrderNumber: string (nullable = false)  
+   	|-- SalesOrderLineNumber: integer (nullable = false)  
+   	|-- ProductName: string (nullable = false)  
+   	|-- SalesTerritoryCountry: string (nullable = false)  
+   	|-- OrderQuantity: integer (nullable = false)  
+   	|-- UnitPrice: decimal(19,4) (nullable = false)  
+   	|-- ExtendedAmount: decimal(19,4) (nullable = false)  
+   	|-- SalesAmount: decimal(19,4) (nullable = false)  
+   	|-- OrderDate: date (nullable = true)  
 
-To confirm a sucessful load, print the `hdi_factInternetSales` schema.
 
-```
-scala> hdi_factInternetSales.printSchema
-```
 
->root
- |-- CarrierTrackingNumber: string (nullable = true)  
- |-- CurrencyKey: string (nullable = true)  
- |-- CustomerKey: string (nullable = true)  
- |-- CustomerPONumber: string (nullable = true)  
- |-- DiscountAmount: string (nullable = true)  
- |-- DueDateKey: string (nullable = true)  
- |-- ExtendedAmount: string (nullable = true)  
- |-- Freight: string (nullable = true)  
- |-- OrderDateKey: string (nullable = true)  
- |-- OrderQuantity: string (nullable = true)  
+  Now we will register our dataframe as a table in our SQLContext i.e. making it queriable like another relational table  
+  ```
+  scala> dwHistoricalSales.registerTempTable("DWTableHistoricalSales")
+  ```
+
+  We now have a queriable SQL Data Warehouse table from a Spark SQLContextSQL. Table is registered as a temporary table and has all SQL commands available to SQLContext.  
+  To verify the data, a quick select will show this.  
+
+  ```
+  scala>  hiveContext.sql("SELECT * FROM DWTableHistoricalSales LIMIT 10").show
+  ```
+
+  Next we want to pull our product NoSQL data from Azure Data Lake Store (ADLS) to perform adhoc queries.
+
+  - Fetch NoSQL Product Data from ADLS via HiveContext
+
+  Spark gets Hive for free using the HiveContext. To work with Hive (our NoSQL data is imported using a HiveContext), we must create a HiveContext.   
+
+  > IMPORTANT NOTE  
+  > Let us assume that another ETL runs in cloud and produces NoSQL Product data into ADLS. The final ETL may need a hybrid scenario that combines historical sales data from SQL Data Warehouse and NoSQL Product data on ADLS.  
+
+    - Copy sample data to ADLS   
+    Upload [this](./assets/data/DimProduct.json) sample data (**DimProduct** table in JSON format) to ADLS by following instructions from [here!](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#uploaddata)
+
+  ```
+  scala>  val adlsProductData = hiveContext.jsonFile("adl://<your_adls_store_name>.azuredatalakestore.net/<path_to_your_adls_folder>/DimProduct.json")
+  ```
+
+  To confirm a sucessful load, print the `adlsProductData` schema.
+
+  ```
+  scala> adlsProductData.printSchema
+  ```
+
+  >root  
+ |-- Class: string (nullable = true)  
+ |-- Color: string (nullable = true)  
+ |-- DaysToManufacture: string (nullable = true)  
+ |-- DealerPrice: string (nullable = true)  
+ |-- EndDate: string (nullable = true)  
+ |-- EnglishDescription: string (nullable = true)  
+ |-- EnglishProductName: string (nullable = true)  
+ |-- FinishedGoodsFlag: string (nullable = true)  
+ |-- ListPrice: string (nullable = true)  
+ |-- ModelName: string (nullable = true)  
+ |-- ProductAlternateKey: string (nullable = true)  
  |-- ProductKey: string (nullable = true)  
- |-- ProductStandardCost: string (nullable = true)  
- |-- PromotionKey: string (nullable = true)  
- |-- RevisionNumber: string (nullable = true)  
- |-- SalesAmount: string (nullable = true)  
- |-- SalesOrderLineNumber: string (nullable = true)  
- |-- SalesOrderNumber: string (nullable = true)  
- |-- SalesTerritoryKey: string (nullable = true)  
- |-- ShipDateKey: string (nullable = true)  
- |-- TaxAmt: string (nullable = true)  
- |-- TotalProductCost: string (nullable = true)  
- |-- UnitPrice: string (nullable = true)  
- |-- UnitPriceDiscountPct: string (nullable = true)  
+ |-- ProductLine: string (nullable = true)  
+ |-- ProductSubcategoryKey: string (nullable = true)  
+ |-- ReorderPoint: string (nullable = true)  
+ |-- SafetyStockLevel: string (nullable = true)  
+ |-- Size: string (nullable = true)  
+ |-- SizeRange: string (nullable = true)
+   |-- SizeUnitMeasureCode: string (nullable = tru  e)
+ |-- StandardCost: string (nullable = true  )
+ |-- StartDate: string (nullable = true)  
+ |-- Status: string (nullable = true)  
+ |-- Style: string (nullable = true)  
+ |-- Weight: string (nullable = true)  
+ |-- WeightUnitMeasureCode: string (nullable = true)  
 
 
-```
-scala> hdi_FactInternetSales.registerTempTable("HDI_FactInternetSales")
-```
 
-### Perform Ad-hoc query between SQL DW Table and Hive external table  
-At this point, we have our SQL DW and Hive tables registered in-memory on the Spark executors. Using the HiveContext to
-perform ad-hoc queries like JOINS becomes trivial.
+  ```
+  scala> adlsProductData.registerTempTable("ADLSProductTable")
+  ```
 
-- Join tables
+  #### Perform ad-hoc complex query between SQL DW Table and ADLS external table  
+  At this point, we have referential historical sales data that is generated by a process on SQL DW and NoSQL product table that is consumed from Azure Data Lake Store, both registered in-memory on the Spark executors.  
 
-```
-scala> val results = hiveContext.sql("SELECT * FROM HDI_FactInternetSales AS A LEFT JOIN DW_FactInternetSales AS B ON A.productkey = B.productkey LIMIT 10")
-```
+  This creates a powerful hybrid scenario. We can easily see how both storage and compute can scale in parallel. This isolates systems, making it manageable.
 
-`results` is a dataframe (formerly SchemaRDD) that we can view, manipulate and export.
+  Using the HiveContext, performing ad-hoc queries like JOINS becomes trivial.
 
-- View output result.
+  - Join tables
 
-```
-scala> results.show
-```
+  ```
+   val historicalSalesInformation = hiveContext.sql("SELECT  a.*, b.EnglishProductName as ProductName  FROM DWTableHistoricalSales a INNER JOIN ADLSProductTable b ON a.ProductKey = b.ProductKey")
+  ```
+
+  `historicalSalesInformation` is a dataframe (formerly SchemaRDD) that we can view, manipulate and export.
+
+  - View output result.
+
+  ```
+  scala> historicalSalesInformation.show
+  ```  
+
+  The results from this pattern can be used in other pipelines or exported for visualization in tools like Power BI.
+
 
 ## Troubleshooting  
 
