@@ -902,7 +902,7 @@ ORDER BY p.ProductID ASC OPTION (FORCE EXTERNALPUSHDOWN);
 	- PolyBase records ~19 seconds total round trip time.
 		- ~16 seconds for MapReduce including cold start. This can be optimized further with Hadoop tuning.
 
-	![PolyBase roundtrip time](./assets/media/SQL-SUMMARy.PNG "PolyBase SQL Summary")
+	![PolyBase roundtrip time](./assets/media/SQL-SUMMARY.PNG "PolyBase SQL Summary")
 
 
 
