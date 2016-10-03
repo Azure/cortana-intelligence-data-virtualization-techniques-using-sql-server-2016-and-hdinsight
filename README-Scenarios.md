@@ -117,7 +117,7 @@ on SQL DW and Parallel DW while on SQL Server 16 customers can achieve this by f
 
 - A one-time PolyBase bulk push (INSERT) and Azure Data Factory (with PolyBase) can be used for incremental delta copies.
 
-- Provide a very logical data migratory route while guaranteeing continous uptime for applications dependent on On-Prem data sources.  
+- Provide a very logical data migratory route while guaranteeing continuous uptime for applications dependent on On-Prem data sources.  
 
 This use case covers the following patterns:   
 
@@ -670,7 +670,8 @@ RECONFIGURE;
 GO	;
 ```
 
-- Allow PolyBase to connect to Hadoop  
+- Allow PolyBase to connect to Hadoop
+
 ```
 -- Different values map to various external data sources.  
 -- Example: value 7 stands for Azure blob storage and Hortonworks HDP 2.X on Linux/Windows.  
@@ -681,6 +682,7 @@ GO   ;
 ```
 
 - Confirm legacy compability estimation is turned off.  
+
 ```
 SELECT  name, value  
     FROM  sys.database_scoped_configurations  
@@ -909,8 +911,7 @@ ORDER BY p.ProductID ASC OPTION (FORCE EXTERNALPUSHDOWN);
 ## Use Case Summary   
 **INTEGRATING TRANSACTIONAL NoSQL DATA WITH REFERENTIAL/RELATIONAL DATA FROM SQL DW ON HDInsight**
 
-Currently, integrating data residing on On-Prem Hadoop systems with Azure compute platforms, like SQL Datawarehouse,
-is not a trivial process.  
+Currently, integrating data residing on On-Prem Hadoop systems with Azure compute platforms, like SQL Data Warehouse, is not a trivial process.  
 
 In order to get better end-to-end throughput, an intermediate copy to blob would be needed; using **PolyBase and Azure Data Factory StagedCopy**. Azure Data Factory is able to apply transformations that match PolyBase/SQL source requirements.  
 
@@ -920,8 +921,14 @@ This workflow, although offers a way to virtualize data on-prem and in cloud, fo
 
 Our tutorial tries to focus on harmonization processes and routes, hence we will achieve the update and merge using Hadoop sources in Azure.  
 
+
+#### Use Case Overview
+Let us assume a scenario can exist where all sales information and transactions are sensitive and need to be kept protected on a SQL data source. Now an ETL that creates inventory and profit projections/visualizations on Power BI may need NoSQL product data residing on Azure Data Lake Store (ADLS) and historical sales data. This becomes a bit tricky due to the disparate source of data and the complex computation to generate this. The Historical ETL can only run on SQL DW (due to the location of the sales data) and NoSQL product data transactions run close to ADLS. We need to figure out an intelligent approach of virtualizing this scenario without increasing resource overhead and network I/O.   
+
+To solve this and show case the power of this use case, we can demonstrate how a complex query can be constructed at the SQL Data Warehouse side (for the sales data) and without materializing the generated tables leverage parallelized in-memory computation of Spark to bring in the NoSQL product data.  
+
 #### Benefit(s)  
-- Click stream (NoSQL) data, like realtime sales information, can be combined with referential (SQL) data, like products in stock, to decide
+- Click stream (NoSQL) data, like real-time information, can be combined with referential (SQL) data, like products in stock, to decide
 how to control inventory of products for profitability and business intelligence.
 
 - Queries can be scaled out and parallelized using Hive, HBase or Spark.  
@@ -929,7 +936,7 @@ how to control inventory of products for profitability and business intelligence
 - HDInsight, out of the box, supports connectivity to relational data sources via `JDBC`. Using Views, complex joins can be
 materialized on SQL Datawarehouse and results pulled into Spark for further processing.
 
-- Complex joins can be done between Facts and Dimensionals, allowing easier Update and Merge operations.
+- Complex joins can be done between Facts and Dimensions, allowing easier Update and Merge operations.
 
 #### Pipeline  
 ![Use Case 2-Architecture](./assets/media/uc2_2.PNG "HDI with sQL DW Hybrid Analytics")  
@@ -1083,6 +1090,32 @@ Follow link to load [Sample data into the deployed SQL Data Warehouse](https://a
 #### Data Source
 1. **AdventureWorks** Dataset (Loaded manually above)
 
+##### Generate Referential Data in SQL Data Warehouse
+Generate a historical **VIEW** of our sales data until last year.  
+
+```
+-- Creating Historical Data as View
+CREATE VIEW HistoricalSales
+AS
+SELECT
+    [SalesOrderNumber]
+    ,[SalesOrderLineNumber]
+    ,p.EnglishProductName as ProductName
+    ,st.SalesTerritoryCountry
+    ,[OrderQuantity]
+    ,[UnitPrice]
+    ,[ExtendedAmount]
+    ,[SalesAmount]
+    ,(convert(date, CAST(OrderDateKey as varchar))) AS [OrderDate]
+FROM [dbo].[FactInternetSales] a
+inner join dbo.DimProduct p on a.ProductKey = p.ProductKey
+inner join dbo.DimSalesTerritory st
+on st.SalesTerritoryKey = a.SalesTerritoryKey
+where year(convert(date, CAST(OrderDateKey as varchar))) < 2015
+```
+
+Creating this `VIEW` does not materialize the table as it may be very large and slow computation on SQL Data Warehouse. The result of this complex query is only materialized at execution time from Spark. This workflow begins to demonstrate how we can leverage the parallelized in-memory computation scenarios that combines the storage power of SQL Data Warehouse and the speed of Spark.
+
 
 #### Start the spark shell pointing to the JDBC connector.  
 With the JDBC defined variables, connect and load data from the SQL DW table.  
@@ -1107,6 +1140,7 @@ scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 ```
 scala> val table = "FactInternetSales"
 ```
+
 
 **NOTE**  
 Since our exercise implements a hybrid query harmonization between SQL DW and NoSQL, we will use the hiveContext. This will give us the SparkSQL commands and also Hive functionalities that will
