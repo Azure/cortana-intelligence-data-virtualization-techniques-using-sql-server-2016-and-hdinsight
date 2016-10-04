@@ -520,7 +520,7 @@ via the following steps:
 
 1. Finally run command  
 `ambari-agent restart`
-1. Point browser to http://<hostname/ipaddress>:8088  
+1. Point browser to `http://<hostname/ipaddress>:8088`  
 	- Enter the user "admin" and put the password you set up (via ssh on VM)
 
 
@@ -1235,9 +1235,8 @@ You can view the data in `dwHistoricalSales` by a call to action `.show`. This w
 
   > IMPORTANT NOTE  
   > Let us assume that another ETL runs in cloud and produces NoSQL Product data into ADLS. The final ETL may need a hybrid scenario that combines historical sales data from SQL Data Warehouse and NoSQL Product data on ADLS.  
-
-    - Copy sample data to ADLS   
-    Upload [this](./assets/data/DimProduct.json) sample data (**DimProduct** table in JSON format) to ADLS by following instructions from [here!](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#uploaddata)
+  
+  - Copy sample data to ADLS Upload [this](./assets/data/DimProduct.json) sample data (**DimProduct** table in JSON format) to ADLS by following instructions from [here!](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#uploaddata)
 
   ```
   scala>  val adlsProductData = hiveContext.jsonFile("adl://<your_adls_store_name>.azuredatalakestore.net/<path_to_your_adls_folder>/DimProduct.json")
