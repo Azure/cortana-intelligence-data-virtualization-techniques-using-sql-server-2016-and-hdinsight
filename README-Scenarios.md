@@ -954,7 +954,7 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 - One Azure SQL Data Warehouse  
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC2.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC2a.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 
 ##### Manual Deployment  
