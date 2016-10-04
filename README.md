@@ -17,548 +17,143 @@
 	ms.date="08/23/2016"
 	ms.author="emawa" />
 
-# Data Warehouse for Advanced Hybrid Analytics  
-Fast growing companies rely on data to make decisions that advance profitability. Lots of companies have data that reside both on premises and in cloud. Our observation 
-is that most want to leverage the cloud for possible data congregation routes but lack
-how best to achieve this using Azure products.  
+# Data Virtualization Patterns for Advanced Hybrid Analytics
+A lot of companies now rely on data to make decisions that advance organizational growth, drive business decisions, generate profitability and so on. With the velocity of data generated from disparate sources, these companies' data have the potential of residing both on premises and in cloud
+depending on the situations. There is a growing need to leverage a hybrid on-prem/cloud system for possible data congregation routes.
+
+The purpose of this tutorial is to discuss some identified use cases and solutions to achieve them using Microsoft Azure products.  
+
+These identified patterns are not just recurring for various clients, but appears to be the growing business process trend. We've done some research and put together this tutorial that tries to cover these cases.
 
 A few possible scenarios are:
 
-- Run ETL (Extract, Transform, Load) activities on SQL-like systems in 
-cloud, or a mixture of SQL and HDInsight. 
-- The user may want to be closest to the largest source of data (locality of reference). 
-- The user may want to keep using SQL and not want to go to SQL DW because it will take a long time to replicate the efficiency, latency and network I/O
+- Systems on-premises marshal off large data computation to the cloud; results are sent back on-premises to applications dependent on this results.  
 
-## USES CASES
-1. Client applications may depend heavily on the On-Premises SQL data sources. However business cases and needs always arise, like data replication and/or scalability, while still guaranteeing business uptime. A strategic approach to gradually migrate data to the cloud can be achieved using PolyBase running On-Premises SQL sources to Azure Storage Blob.  
+- The user may want to be closest to the largest source of data (locality of reference), probably relational, while integrating and referencing NoSQL data like click stream information to drive sales.  
 
-1. Clients may want to merge and update unstructured/semi-structured data that changes all the time with relational data. ETL is possible but handling the relational part 
-maybe challenging. The user can perform the transformation on HDI, project, merge and then update relational data stores.
-1. ETL on relational data can be challenging. There may be situations where ETL is not easily transformed to TSQL and/or USQL. We can reuse all that in HDI without having to allocate a fresh resource. 
+- Leverage SQL knowledge both on-prem and in cloud on both relational and non-relational data.
 
-## TABLE OF Contents
+- Avoiding low throughput on your data pipeline due to constant large data transfers
 
-1. [Scope of Tutorial ](#scope)
-2. [Prerequisites](#prerequisites)
-3. [Resource Deployment Walkthrough](#resource-deployment-walkthrough)
-4. [Integrating data from Azure Blob with SQL-Like Systems via Polybase](#integrating-data-from-azure-blob-with-sql-via-polybase)
-5. [Integrating data from SQL sources with HDInsight via SparkSQL](#integrating-data-from-sql-sources-with-hdinsight-using-sparksql)
-6. [Integrating semi-structured data from On-Premises sources with HDInsight - Update and Merge into SQL DW](#integrating-semi-structured-data-from-on-premises-sources-with-sql-datawarehouse-using-hdinsight)
-7. [Migrating data from On-Premises SQL sources to HDInsight external tables using PolyBase and Azure Blob](#migrating-sql-data-to-hdi-using-polybase-and-blob)
+- Segregation and security of sensitive information on-prem while using the cloud for large crunching of other types of data.
 
-## Scope
-This tutorial helps you create an end-to-end (E2E) deployment ready pipeline for showing
-Azure data warehousing capabilities using SQL Data Sources and HDInsight.  
+- Avoid replication of business logic on multiple systems; save time, be more efficient, minimize latency and network I/O using incremental copying.
+
+#### TAGS - Data Warehouse, HDInsight, Azure, Azure Blob Storage, SQL Server 2016, Azure IAAS, NoSQL, SQL On-Prem, SparkSQL  
+
+## Scope and Prerequisites
+This tutorial helps you create end-to-end (E2E) deployment ready pipelines for each use case. Each pipeline shows one
+Azure Data virtualization capability using Azure products. For example SQL Data Sources (SQL Server 2016 (IAAS), Azure Data Warehouse), Azure Storage, PolyBase, and HDInsight.  
 
 The tutorial will describe the overall approach through the following steps:  
 
 1. ARM deployment of Azure Resources.  
 
-1. Creating and loading of sample datasets on On-Prem SQL Server 2016,  SQL Data Warehouse and HDI.
+1. Creating and loading of sample datasets.
 
-1. Running SQL-like transactions on On-Prem SQL Server 2016, SQL Data Warehouse and  Spark-Shell using SparkSQL.
+1. Running SQL-like transactions either on On-Prem SQL Server 2016, SQL Data Warehouse and/or  Spark-Shell using SparkSQL depending
+on the given use case.
 
-### Architecture Overview
-![Hybrid data virtualization Architecture](./assets/media/architecture-overview.PNG "General Overview")
 
-## Prerequisites
-
-This guide assumes the following prerequisites -  
+We assume the following prerequisites are fulfilled -  
 
 1. An Active [Azure](https://azure.microsoft.com/) subscription.
 
-1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands 
+1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands  
 
-1. A container under the newly created Storage Account with Read/Write access; storage for the following external sources.  
-	- Additional rows of the **FactInternetSales** sample data from the **AdventureWorks** datasets.
-	- Sample data created to demonstrate PolyBase capabilities.
+## High Level Use Case(s) Architecture
+1. Hybrid scenarios with On-Prem SQL Server 2016 and the following:
+	- Hadoop Cluster for compute push down
+	- HDInsight Spark/Hive Cluster for table projections.  
 
+	![Use Case 1-Architecture Overview](./assets/media/HIGHLEVEL-ARCH1.PNG "Use Case 1-Architecture Overview")  
 
+2. Azure Cloud Only scenario with HDInsight Spark/Hive Cluster and Azure SQL DW.
 
-## Resource Deployment Walkthrough
-To get started, choose a deployment method below. Either deploy the Azure resources by clicking the `Deploy to Azure` or follow the `step-by-step` guide (more detailed). Both achieves the same goal.  
+	![Use Case 2-Architecture Overview](./assets/media/HIGHLEVEL-ARCH2.PNG "Use Case 2-Architecture Overview")
 
-### One Button Deploy
-Clicking button below creates a new `blade` in Azure portal.
+## Table of Content
+1. [Use Case 1 - Hybrid Data Analytics from On-Premises SQL Server to Cloud (HDInsight and Hadoop MapReduce) using PolyBase for query scale-out and processing.](#hybrid-onprem-sqlserver16-to-cloud-data-virtualization-using-polybase)
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+1. [Use Case 2 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
 
-This will create a new "blade" in the Azure portal.
+1. [Troubleshooting](#troubleshooting)
 
-### Step by Step guide with PowerShell
+1. [Appendix](#appendix)
 
-1. Open up PowerShell.
 
-1. Log into your Azure Account and add your subscription:  
+## Hybrid OnPrem SQLServer16 To Cloud Data Virtualization Using PolyBase
+#### Use Case Summary
 
-    `Login-AzureRmAccount` 
+**INTEGRATING ON-PREMISES SQL SOURCES TO BIGDATA PLATFORMS LIKE HDINSIGHTS FOR PARALLELIZATION AND HADOOP FOR QUERY PUSH-DOWN.**  
 
-    Enter your login details in the pop-up window.
+With the growth of data, clients will require a more robust workflow for ETL jobs.
+The option of migrating big data to cloud for this task is becoming very useful.
+Needless to say, applications that are dependent on on-prem infrastructure would need
+ to still be supported, while the ETL is run in cloud.   
 
-1. Create a new Azure Resource Group to  logical grouping for your resources:  
+PolyBase opens up a bigger opportunity for data processing and analytics.
 
-    `New-AzureRmResourceGroup -Name your_group_name -Location "East US 2"`  
+- It provides integration between traditional SQL sources (SQL Server 2016, SQL DW, Parallel DW) and other big data platforms like Hadoop.  
 
-1. Deploy and initialize Azure Resources:  
-    
-    ` New-AzureRmResourceGroupDeployment -Name your_deployment_label -ResourceGroupName your_group_name -TemplateFile azuredeploy.json [-Verbose]`
+-  With Standard SQL (as against MapReduce), customers can integrate Hadoop and relational data.
 
-    **_The optional **-Verbose** flag displays deployment process on standard output._**  
-	
-	This deployment script will deploy the following resources:  
-    
-    - Azure Storage Account (_mapped file system for the HDI Cluster_)
-    - Azure SQL Logical Server (_to host the DB/DW_)
-    - Azure SQL Database  
-    - Azure SQL Data Warehouse
-    - Firewall rules for the SQL Server
-    - Azure Spark HDInsight cluster  
-	- SQL Server 2016 VM with PolyBase pre-installed and loaded with sample data.
+- Achieve query scale out and execution performance by predicate push-down to your already existing Hadoop clusters.
 
-At this point, you have added your subscription, created a new resource group, HDI Spark (2 head, 2 worker) cluster, storage account
-(mapped to HDI cluster as default filesystem), a SQL Data Warehouse with Polybase support, a Virtual Machine configured with SQL Server 2016 running PolyBase and sample db and table attached to the DW and SQL Server.  
+PolyBase support for transactional SQL (T-SQL) varies slightly on what SQL compute platform in question.   
 
+For instance PolyBase does not support `UPDATE` and `DELETE` statements at the time of writing this. However, such `DML` actions can be achieved using `CREATE EXTERNAL AS SELECT`
+on SQL DW and Parallel DW while on SQL Server 16 customers can achieve this by first creating an external table `CREATE EXTERNAL TABLE` (with schema definition) and then a separate `INSERT INTO TABLE AS SELECT` to populate the external table. Intermediate temporary tables need to be created and then `RENAME` command used to overwrite the old table.
 
->### Important Notes
->Please make note of the following key points:
->
->1. **Data Source:** This tutorial uses the **FactInternetSale** table from the **AdventureWorks** Data for exercises interacting with SQL DW and given sample data for exercises demonstrated on On-Prem SQL Server 2016. _Instructions to load all data described below_.  
->  
->1. **Polybase support/activities:** There is no Polybase support (at the time of writing this) 
->for Azure SQL Database and SQL Servers prior to 2016.  
-Due to this we have deployed the On-Prem SQL Server 2016 on a VM, preinstalled with PolyBase. If for any reason, the PolyBase Data Movement and Engine services do not start automatically, uninstall and reinstall PolyBase as an added feature to SQL Server. SQL Server 2016 installation ISO is stored on `C:\TUTORIAL_EXTRAS_OPEN_ME\SQLServer_13.0_Full`
->
-> No different actions or commands are needed to achieve the same effect on PolyBase running on On-Premises SQL Server **2016** and  on Azure SQL Datawarehouse. 
->	- Go to [PolyBase installation](https://msdn.microsoft.com/en-us/library/mt652312.aspx) for instructions on getting Polybase onto SQL Server **2016**. 
+> For details examples see [CTAS](https://msdn.microsoft.com/en-us/library/mt204041.aspx) and [CETAS](https://msdn.microsoft.com/en-us/library/mt631610.aspx) for SQL DW and Parallel DW examples.
 
 
-## Integrating data from Azure Blob with SQL via Polybase 
-
-### Create and Migrate sample data to Azure Blob Storage 
-We need an external storage in blob for PolyBase to link to and create external tables  in SQL Data Warehouse.
-
-#### Create a new container under storage account.
-Create a new blob storage container under the newly deployed Storage Account to save some extra sample data. Make note of newly created container.  
-
-  > **Azure Blob container creation Tools -** [Azure portal](https://portal.azure.com/signin/index/?cdnIndex=4&l=en.en-us) or [Azure Storage Explorer](http://storageexplorer.com/)  
-
-#### Create Sample data  
-Create and save some sample data locally  (`sampledata.csv`).  
-
-```
-0.0000,100.0000,'1) 0 - 100'
-100.0001,500.0000,'2) >100 - 500'
-500.0001,1000.0000,'3) >500 - 1000'
-1000.0001,2000.0000,'4) >1000 - 2000'
-2000.0001,5000.0000,'5) >2000 - 5000'
-5000.0001,10000.0000,'6) >5000 - 10000'
-10000.0001,20000.0000,'7) >10000 - 20000'
-20000.0001,30000.0000,'8) >20000 - 30000'
-30000.0001,40000.0000,'9) >30000 - 40000'
-40000.0001,50000.0000,'10) >40000 - 50000'
-50000.0001,60000.0000,'11) >50000 - 60000'
-60000.0001,70000.0000,'12) >50000 - 70000'
-70000.0001,80000.0000,'13) >50000 - 80000'
-80000.0001,90000.0000,'14) >50000 - 90000'
-90000.0001,100000.0000,'15) >50000 - 100000'
-100000.0001,99999999999999.9999,'16) >100000'
-```
-
-Copy the sample data from your local machine data to Azure Storage blob using [AzCopy tool](https://azure.microsoft.com/en-us/documentation/articles/storage-use-azcopy/).  
-
-```
-AzCopy /Source:<Sample Data Location>  /Dest:https://<storage account>.blob.core.windows.net/<container name> /DestKey:<storage key> /Pattern:sampledata.csv
-```
-
-###  Create external T-SQL object  
-Polybase can create objects that depend on either Hadoop or Azure Blob. For the purposes of this tutorial, we will be creating our external data source that depends on the latter.
-Connect to the earlier created database on SQL DW and following instructions below.  
-
-**LINKS**  - Interact with SQL DW via [Visual Studio](https://www.visualstudio.com/) or [Microsoft SQL Server Management Studio](https://msdn.microsoft.com/en-us/library/mt238290.aspx).  
-
-- Create a master key on the database.  
-This step is very important to encrypt the credential secret during network I/O transmission.
-
-```
-CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Us3@M0reS3cur3dP@ssw0rd!';
-```
-
-- Use master key to create a database scoped credential for our Azure blob storage.  
-*Parameters:*  
-    - **IDENTITY:** Any string identifier (not used for authentication). *Preferrably use your storage name*.  
-    - **SECRET:** Your Azure storage account key (can be found on [Azure Portal](portal.azure.com))
-
-```
-CREATE DATABASE SCOPED CREDENTIAL AzureStorageCredential
-WITH IDENTITY = '<your_storage_name>', Secret = '<storage_account_access_key>';
-```
-
-- Create your external data source. 
-
-*Parameters:* 
-    - **LOCATION:**  Wasb path to Azure account storage account and blob container.  
-    - **CREDENTIAL:** The database scoped credential we created earlier. 
-
-```
-CREATE EXTERNAL DATA SOURCE AzureStorage WITH (
-	TYPE = HADOOP,
-	LOCATION = 'wasbs://<blob_container_name>@<azure_storage_account_name>.blob.core.windows.net',
-	CREDENTIAL = AzureStorageCredential	
-);
-```
-
-- Create an file format for external source.  
-In Polybase this is important to describe the format/structure of the input data.  
-*Parameters:*  
-    - **FORMAT TYPE:** Data format in Azure Blob. *Examples DELIMITEDTEXT,  RCFILE, ORC, PARQUET.*   
-
-```
-CREATE EXTERNAL FILE FORMAT TextFileFormat WITH (
-	FORMAT_TYPE = DELIMITEDTEXT,
-	FORMAT_OPTIONS (FIELD_TERMINATOR = ',', USE_TYPE_DEFAULT = TRUE)
-);
-```
-
-- Create an external table and define table schema to hold sample data.  
-We are now ready to create our external table that points to an external storage.  
-*Parameters:*  
-    - **LOCATION:** Path to a file or directory that contains the actual data (this is relative to the blob container described earlier).    
-        - To point to all files under the blob container, use **LOCATION='/'**  
-
-```
-CREATE EXTERNAL TABLE TRANSACTIONS_EXTERNAL (
-	TRANSACTION_MIN DECIMAL(18,4),
-	TRANSACTION_MAX DECIMAL(18,4),
-	TRANSACTION_DESC VARCHAR(255)
-)
-WITH (LOCATION='/',
-	  DATA_SOURCE = AzureStorage,
-	  FILE_FORMAT = TextFileFormat
-);
-```
-
-### Create local T-SQL object  
-Create a sample table on the local SQL Server database, which will be used for ad-hoc queries against the external table.  
-
-- Create an internal/local table and define table schema.  
-
-```
-CREATE TABLE TRANSACTIONS_INTERNAL (
-	TRANSACTION_MIN DECIMAL(18,4),
-	TRANSACTION_MAX DECIMAL(18,4),
-	TRANSACTION_DESC VARCHAR(255)
-);
-```
-
-- Insert sample data to internal table.  
-
-```
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (0.0000, 100.0000, '1) 0 - 100');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (100.0001, 500.0000, '2) >100 - 500');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (500.0001, 1000.0000, '3) >500 - 1000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (1000.0001, 2000.0000, '4) >1000 - 2000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (2000.0001, 5000.0000, '5) >2000 - 5000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (5000.0001, 10000.0000, '6) >5000 - 10000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (10000.0001, 20000.0000, '7) >10000 - 20000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (20000.0001, 30000.0000, '8) >20000 - 30000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (30000.0001, 40000.0000, '9) >30000 - 40000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (40000.0001, 50000.0000, '10) >40000 - 50000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (50000.0001, 60000.0000, '11) >50000 - 60000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (60000.0001, 70000.0000, '12) >50000 - 70000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (70000.0001, 80000.0000, '13) >50000 - 80000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (80000.0001, 90000.0000, '14) >50000 - 90000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (90000.0001, 100000.0000, '15) >50000 - 100000');
-INSERT INTO TRANSACTIONS_INTERNAL VALUES (100000.0001, 99999999999999.9999, '16) >100000');
-```
-
-### Demonstrating ad-hoc queries.
-Both external and internal tables are exposed to the SQL compute engine, and we can query both irregardless of their locations.  
-
-```
-SELECT * FROM TRANSACTIONS_INTERNAL AS A inner join TRANSACTIONS_EXTERNAL as B on A.TRANSACTION_MAX = B.TRANSACTION_MAX;
-```
-![Inner Join](./assets/media/inner-join-results.PNG "Ad hoc Inner Join")
-```
-SELECT * FROM TRANSACTIONS_INTERNAL AS A right join TRANSACTIONS_EXTERNAL as B on A.TRANSACTION_MAX > B.TRANSACTION_MAX;
-```
-![Right Join](./assets/media/right-join-less.PNG "Ad hoc Right Join")
-
-```
-SELECT * FROM TRANSACTIONS_INTERNAL AS A full join TRANSACTIONS_EXTERNAL as B on A.TRANSACTION_MAX > B.TRANSACTION_MAX;
-```
-
-
-## Integrating data from SQL sources with HDInsight using SparkSQL  
-**SQL interaction example with JDBC**
-
-SQL server Database/Datawarehouse have both storage and compute on the same machine. Apache Spark on HDInsight is a scalable compute engine that connects storage from separate platforms like Azure Blob Storage, HDFS and so on.  
-
-This tutorial demonstrates the capabilities of Spark in leveraging distributed data stores in a hybrid data harmonization mode; integrating data from SQL sources into the Spark ecosystem on HDI.  
-
-### Benefits  
-
-1. A user can issue a query in HDI as HQL or SparkSQL in a situation where there is partial data on HDFS (or similar) and rest on traditional relational sources. A connection is made to SQL Server, retrieve data and compute on HDI.  
-1. There is a minimal learning curve; a user can easily transfer SQL knowledge while getting Spark's in-memory computation (100x faster than hadooop Map/Reduce).
-
-### Requirements
-1. SQL Server Data Warehouse with sample data. ARM deployment for SQL Data Warehouse doesn't supply the sample data. 
-For instructions on how to manually load sample data into Data Warehouse, click [here!](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/)
-
-**NOTE** : On HDInsight, SQL Server JDBC jar is bundled by default during deployment (Linux - **/usr/hdp/2.2.7.1-10/hive/lib/sqljdbc4.jar**). For futher information on how to configure Spark to access Microsoft SQL Server check here 
-[How to allow Spark access Microsoft SQL Server](https://blogs.msdn.microsoft.com/bigdatasupport/2015/10/22/how-to-allow-spark-to-access-microsoft-sql-server/) 
-
-
-### Create Hive Data Store, Connect SQL Datawarehouse from Spark 
-Let us begin by first connecting to our DW table. From the Spark shell, we are going to create a connection to the SQL Datawarehouse table and then 
-run some sample queries using SparkSQL.
-
-#### 1. Create an external table on Hive Metastore using HQL. 
-This tutorial uses the **FactInternetSale** Sample table.
-
-  **NOTE:** It is possible to create the Hive table directly from Spark shell, but we want to show a direct interaction with Hive via Web UI.  
-
-- Launch Ambari views from portal  
-From [Azure Portal](portal.azure.com), go to the newly created HDInsight cluster. Click on **Ambari Views** to connect via http. Enter your username and password 
-set during ARM deployment.  
-
-  - Create Database and external table pointing to data on Azure Storage. 
-
-  > **IMPORTANT**  
-  > WASB must be able to find the Azure Storage account key in it's configuration. Using `SET` statement to provide a new secret key will not work. `CREATE TABLE` runs in the metastore service and has not visibility to the `SET` statements. Hence no runtime configuration changes will be used. 
-  >
-  > **Remedy -** Create extra containers in the Storage Account attached to the HDI Cluster and save any extra data. Easily achieve this using [Azure portal](https://portal.azure.com/signin/index/?cdnIndex=4&l=en.en-us) or [Azure Storage Explorer](http://storageexplorer.com/),
-
-```
-CREATE DATABASE IF NOT EXISTS DATAANALYTICS;
-CREATE EXTERNAL TABLE DATAANALYTICS.FactInternetSales
-(
-	ProductKey int,
-	OrderDateKey int,
-	DueDateKey int,
-	ShipDateKey int,
-	CustomerKey int,
-	PromotionKey int,
-	CurrencyKey int,
-	SalesTerritoryKey int,
-	SalesOrderNumber string,
-	SalesOrderLineNumber tinyint,
-	RevisionNumber tinyint,
-	OrderQuantity smallint,
-	UnitPrice decimal(18, 6),
-	ExtendedAmount decimal(18, 6),
-	UnitPriceDiscountPct float,
-	DiscountAmount float,
-	ProductStandardCost decimal(18, 6),
-	TotalProductCost decimal(18, 6),
-	SalesAmount decimal(18, 6),
-	TaxAmt decimal(18, 6),
-	Freight decimal(18, 6),
-	CarrierTrackingNumber string,
-	CustomerPONumber string
-)
-ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' 
-LINES TERMINATED BY '\n'
-STORED AS TEXTFILE LOCATION 'wasb://<container_name>@<storage_account_name>.blob.core.windows.net/'
-tblproperties ("skip.header.line.count"="1");
-```
-
-#### 2. Start the spark shell pointing to the JDBC connector.  
-With the JDBC defined variables, connect and load data from the SQL DW table.  
-
-  **NOTE:** All JDBC jar files are available on HDI Clusters by default at **/usr/hdp/<version_of_hdp_number>/hive/lib/**  
-
-```
-$SPARK_HOME/bin/spark-shell --jars  /usr/hdp/current/hive-server2/lib/sqljdbc4.jar
-```
-
-If Spark shell loads successfully, we can now connect to the SQL DW Table **FactInternetSale** and read the table.  
-The following Scala code defines connection variables to an Azure SQL Data Warehouse table and connects to the external table; making it available for querying.    
-
-```
-scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"  
-```
-
-```
-scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"  
-```
-
-```
-scala> val table = "FactInternetSales"
-```
-
-**NOTE**  
-Since our exercise implements a hybrid query harmonization between SQL DW and Hive, we will use the hiveContext. This will give us the SparkSQL commands and also Hive functionalities that will 
-let use perform joins. We need to do this because temporary tables are registered in-memory and attached to a specific SQLContext.
-
-#### 3. Construct a HiveContext (with SQL implicit commands) and fetch data from SQL DW.
-
-- Import HiveContext package
-
-```
-scala> import org.apache.spark.sql.hive.HiveContext
-
-```
-
-- Construct a HiveContext and attach to existing Spark context.  
-
-  In order to work with Hive from Spark, you must construct a HiveContext.  
-
-  **NOTE** -  HiveContext inherits from SQLContext and also benefits from all SQL commands available from SQLContext. It is still possible to create a HiveContext without a Hive deployment. For details visit [Spark SQL Docs](http://spark.apache.org/docs/latest/sql-programming-guide.html)  
-
-```
-scala> val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
-```
-
-```
-scala> import hiveContext.implicits._
-```
-
-- Fetch data from SQL Data Warehouse
-
-```
-scala> val dw_factInternetSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()
-```
-
-To confirm a success connection, we should get a description of the columns of the table **FactInternetSales** as a **dataframe** `df`  
-
-> df: org.apache.spark.sql.DataFrame = [ProductKey: int, OrderDateKey: int, DueDateKey: int, ShipDateKey: int, CustomerKey: int, PromotionKey: int, CurrencyKey: int, SalesTerritoryKey: int, SalesOrderNumber: string, SalesOrderLineNumber: int, RevisionNumber: int, OrderQuantity: int, UnitPrice: decimal(19,4), ExtendedAmount: decimal(19,4), UnitPriceDiscountPct: double, DiscountAmount: double, ProductStandardCost: decimal(19,4), TotalProductCost: decimal(19,4), SalesAmount: decimal(19,4), TaxAmt: decimal(19,4), Freight: decimal(19,4), CarrierTrackingNumber: string, CustomerPONumber: string]
-
-You can view the data in `df_factinternetsales` by a call to action `df.show`. This will display the **top 20 rows** by fetching results from the executors back to the driver node.
-
-```
-scala> dw_factInternetSales.show
-```
-
-To view the dataframe schema.  
-
-```
-scala> dw_factInternetSales.printSchema
-```
+#### Benefit(s)  
+- Delegation of time consuming processes/jobs to the cloud for parallelized computations.
 
-You should a similar output as the following:  
+- Queries can be easily scaled out.  
 
->root  
- |-- ProductKey: integer (nullable = false)   
- |-- OrderDateKey: integer (nullable = false)  
- |-- DueDateKey: integer (nullable = false)  
- |-- ShipDateKey: integer (nullable = false)  
- |-- CustomerKey: integer (nullable = false)  
- |-- PromotionKey: integer (nullable = false)  
- |-- CurrencyKey: integer (nullable = false)  
- |-- SalesTerritoryKey: integer (nullable = false)  
- |-- SalesOrderNumber: string (nullable = false)  
- |-- SalesOrderLineNumber: integer (nullable = false)  
- |-- RevisionNumber: integer (nullable = false)  
- |-- OrderQuantity: integer (nullable = false)  
- |-- UnitPrice: decimal(19,4) (nullable = false)  
- |-- ExtendedAmount: decimal(19,4) (nullable = false)  
- |-- UnitPriceDiscountPct: double (nullable = false)  
- |-- DiscountAmount: double (nullable = false)  
- |-- ProductStandardCost: decimal(19,4) (nullable = false)  
- |-- TotalProductCost: decimal(19,4) (nullable = false)  
- |-- SalesAmount: decimal(19,4) (nullable = false)  
- |-- TaxAmt: decimal(19,4) (nullable = false)  
- |-- Freight: decimal(19,4) (nullable = false)  
- |-- CarrierTrackingNumber: string (nullable = true)  
- |-- CustomerPONumber: string (nullable = true)  
+- Sensitive data can be left On-Prem while the cloud be leveraged to work on less sensitive parts of the process flow.  
 
+- A one-time PolyBase bulk push (INSERT) and Azure Data Factory (with PolyBase) can be used for incremental delta copies.
 
-Now we will register our dataframe as a table in our SQLContext i.e. making it queriable like another relational table  
-```
-scala> dw_factInternetSales.registerTempTable("DW_FactInternetSales")
-```
+- Provide a very logical data migratory route while guaranteeing continuous uptime for applications dependent on On-Prem data sources.  
 
-We now have a queriable SQL Data Warehouse table from a Spark SQLContextSQL. Table is registered as a temporary table and has all SQL commands available to SQLContext.  
-To verify the data, a quick select will show this.  
+This use case covers the following patterns:   
 
-```
-scala>  hiveContext.sql("SELECT * FROM DW_FactInternetSales LIMIT 10").show
-```
+1. Data projection to HDInsight clusters using Polybase; target external tables that are backed by Azure Blob.  
 
-Next we want to point to the external table on Hive Metastore we created earlier. 
+2. PolyBase query scale-out from SQL Server 16 to Hadoop MapReduce; query compute "predicate" push-down.
 
-- Fetch Hive Data from Spark via our HiveContext  
+#### Data Projection Pipeline  
+The architecture of this pattern can be broken down into two cases.  
 
-Spark gets Hive for free using the HiveContext. To work with Hive, we must create a HiveContex. It is very easy to retrieve data stored on a metastore directly from SparkContext.  
+1. **Initial Bulk Copy -** The entire data is projected one time using PolyBase to your HDInsight cluster using external tables.
+![Use Case 1-Architecture](./assets/media/uc1-bulk.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")  
 
-```
-scala> val hv_FactInternetSales = hiveContext.sql("SELECT * FROM DATAANALYTICS.FactInternetSales")
-```
+1. **Incremental Delta Data Copy -** Copy activity for modified rows or changes in data can be easily orchestrated using ADF with PolyBase support.  
+![Use Case 1-Architecture](./assets/media/uc1-incremental.PNG "On-Prem SQL Server 2016 and HDInsight - Incremental Copy")
 
-```
-scala> hv_FactInternetSales.registerTempTable("HV_FactInternetSales")
-```
+#### Resource Deployment  
+Clicking button below creates a new `blade` in Azure portal with the following resources deployed:
 
-### Perform Ad-hoc query between SQL DW Table and Hive external table  
-At this point, we have our SQL DW and Hive tables registered in-memory on the Spark executors. Using the HiveContext to
-perform ad-hoc queries like JOINS becomes trivial.
+1. One SQL Server 2016 with PolyBase support (IAAS)  
 
-- Join tables
+1. A four node HDInsight cluster - _two head nodes and two worker nodes_.
 
-```
-scala> val results = hiveContext.sql("SELECT * FROM HV_FactInternetSales AS A LEFT JOIN DW_FactInternetSales AS B ON A.productkey = B.productkey LIMIT 10")
-```
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
-`results` is a dataframe (formerly SchemaRDD) that we can view, manipulate and export. 
 
-- View output result. 
-
-```
-scala> results.show
-```
-
-
-  
-
-## Integrating Semi-structured Data From On Premises Sources With SQL Datawarehouse using HDInsight
-#### **USE CASE:**   
-- INTEGRATING SEMI-STRUCTURED DATA WITH RELATIONAL DATA. 
-
-Curerntly, integrating data residing on On-Prem Hadoop with Azure compute platforms, like HDInsight, is not a trivial process. In order to get better end-to-end throughput an intermediate copy to blob would be needed. One would need to use PolyBase and StagedCopy (using **Azure Data Factory**). Azure Data Factory is able to apply transformations that match PolyBase/SQL source requirements. Check out [Staged Copy using PolyBase](https://azure.microsoft.com/en-us/documentation/articles/data-factory-azure-sql-data-warehouse-connector/#staged-copy-using-polybase) for further details.  
-
-This workflow, although offers a way to virtualize data on-prem and in cloud, focuses more on data copy and not integration nor harmonization. This can easily get expensive in terms of resources (for staged copy), security concerns (additional step to encrypt) and so on.   
-
-Our tutorial tries to focus on harmonization processes and routes, hence we will achieve the update and merge using Hadoop sources in Azure.  
-
-We will be using the **FactInternetSale** table from the **AdventureWorks** Dataset.
-
-**Columns -** `ProductKey, OrderDateKey, DueDateKey, ShipDateKey, CustomerKey, PromotionKey, CurrencyKey, SalesTerritoryKey, SalesOrderNumber, SalesOrderLineNumber, RevisionNumber, OrderQuantity, UnitPrice, ExtendedAmount, UnitPriceDiscountPct, DiscountAmount, ProductStandardCost, TotalProductCost, SalesAmount, TaxAmt, Freight, CarrierTrackingNumber, CustomerPONumber
-`
-
-
-
-## Migrating SQL data to HDI using PolyBase and Blob
-#### **USE CASE**  
-- MIGRATORY ROUTE FROM ON-PREMISES SQL SOURCES TO HDINSIGHT USING POLYBASE AND AZURE BLOB.  
-
-With the growth of data, clients will require a more robust workflow for ETL jobs. The option of migrating big data to cloud for this task is becomging very useful. Needless to say, applications that are dependent on on-prem infrastructure would need to still be supported, while the ETL is run in cloud. This use case covers a pattern of projecting data, using Polybase, to HDInsight clusters targetting external tables that are backed by Azure Blob.   
-
-#### Prerequisites  
-The following PolyBase T-SQL objects are required. 
-
-1. Database scoped credential 
-
-1. External Data source  
-
-1. External file format  
-
-1. Blank external table on Azure Blob  
-
-
-Earlier, in [Integrating data from Azure Blob with SQL-Like Systems via Polybase](#integrating-data-from-azure-blob-with-sql-via-polybase), we created objects that can be reused; database scoped credential, data source, and file format. We will need to create a new external table to hold data projected.  
-
->For detailed information on [Creating PolyBase T-SQL objects](https://msdn.microsoft.com/en-us/library/mt652315.aspx).
-
-**Tables to migrate**  
+#### Data Source
 1. Product table from AdventureWorks2012.
 
 **Essential House keeping**  
-> From SSMS, you may encounter the following error message while trying to export your tables. 
+> From SSMS, you may encounter the following error message while trying to export your tables.
 >
 >  
 >`Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.`  
 >
-> The following configurations must be set correctly. 
+> The following configurations must be set correctly.
 > 1. PolyBase must be allowed to export external tables.
 > 1. The legacy compability estimation must be turned off.  
 > 1. Your database compability level must be at least 120.
@@ -568,6 +163,7 @@ Earlier, in [Integrating data from Azure Blob with SQL-Like Systems via Polybase
 ```
 sp_configure 'allow polybase export', 1;
 RECONFIGURE;
+GO	;
 ```
 
 - Confirm legacy compability estimation is turned off.  
@@ -594,11 +190,11 @@ Alter level if needed, for my case I chose 130.
 ```
 SELECT ServerProperty('ProductVersion');  
 go  
-  
+
 ALTER DATABASE your_database_name  
     SET COMPATIBILITY_LEVEL = 130;  
 go  
-  
+
 SELECT    d.name, d.compatibility_level  
     FROM  sys.databases AS d  
     WHERE d.name = 'your_database_name';  
@@ -609,27 +205,90 @@ go
 Outputs  
 
 | name          | compability_level
-| ------------- |:-------------:| 
-| `your_database_name`| 130 | 
-  
+| ------------- |:-------------:|
+| `your_database_name`| 130 |
+
+
+At this point, our SQL Server 2016 is ready to support PolyBase transactions.
+
+
+### Required PolyBase Objects    
+The following PolyBase T-SQL objects are required.
+
+1. Database scoped credential
+
+1. External Data source  
+
+1. External file format  
+
+1. External data source (i.e blank external table) that points to a directory on Azure Blob.
+
+####  Create the T-SQL objects
+Polybase can create objects that depend on either Hadoop or Azure Blob. For the purposes of this pattern, we will be creating our external data source that depends on the latter.
+Connect to the AdventureWorks2012 database pre-loaded on the earlier created SQL Server 2016 and following instructions below.
+
+**LINKS**  - You can interact with SQL Server 2016 via [Visual Studio](https://www.visualstudio.com/) or [Microsoft SQL Server Management Studio](https://msdn.microsoft.com/en-us/library/mt238290.aspx).  
+
+- Create a master key on the database.  
+This step is very important to encrypt the credential secret during network I/O transmission.
+
+```
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Us3@M0reS3cur3dP@ssw0rd!';
+```
+
+- Use master key to create a database scoped credential for our Azure blob storage.  
+*Parameters:*  
+    - **IDENTITY:** Any string identifier (not used for authentication). *Preferably use your storage name*.  
+    - **SECRET:** Your Azure storage account key (can be found on [Azure Portal](portal.azure.com))
+
+```
+CREATE DATABASE SCOPED CREDENTIAL AzureStorageCredential
+WITH IDENTITY = '<your_storage_name>', Secret = '<storage_account_access_key>';
+```
+
+- Create your external data source.
+
+*Parameters:*
+    - **LOCATION:**  Wasb path to Azure account storage account and blob container.  
+    - **CREDENTIAL:** The database scoped credential we created earlier.
+
+```
+CREATE EXTERNAL DATA SOURCE AzureStorage WITH (
+	TYPE = HADOOP,
+	LOCATION = 'wasbs://<blob_container_name>@<azure_storage_account_name>.blob.core.windows.net',
+	CREDENTIAL = AzureStorageCredential
+);
+```
+
+- Create an file format for external source.  
+In Polybase this is important to describe the format/structure of the input data.  
+*Parameters:*  
+    - **FORMAT TYPE:** Data format in Azure Blob. *Examples DELIMITEDTEXT,  RCFILE, ORC, PARQUET.*   
+
+```
+CREATE EXTERNAL FILE FORMAT TextFileFormat WITH (
+	FORMAT_TYPE = DELIMITEDTEXT,
+	FORMAT_OPTIONS (FIELD_TERMINATOR = ',', USE_TYPE_DEFAULT = TRUE)
+);
+```
 
 
 #### Create an external table and define table schema to hold data.
 
 > **Important Note**  
-The external table's schema definitions must match the schema of table we are trying to project. Decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`. 
+The external table's schema definitions must match the schema of table we are trying to project. Decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`.
 
 
 ##### Expand the `Columns` folder in SQL Server Management Studio (SSMS) to examine.   
 
-![Product Table Schema](./assets/media/product-schema-scaled.PNG "Product Table")  
+![Product Table Schema](./assets/media/product-schema-scaled.png "Product Table")  
 
 
 
 ##### Point External table to Blob container
 
  > **IMPORTANT**  
-  > WASB must be able to find the Azure Storage account key in it's configuration. Using `SET` statement to provide a new secret key will not work. `CREATE TABLE` runs in the metastore service and has not visibility to the `SET` statements. Hence no runtime configuration changes will be used. 
+  > WASB must be able to find the Azure Storage account key in it's configuration. Using `SET` statement to provide a new secret key will not work. `CREATE TABLE` runs in the metastore service and has not visibility to the `SET` statements. Hence no runtime configuration changes will be used.
   >
   > **Remedy -** Create extra containers in the Storage Account attached to the HDI Cluster and save any extra data. Easily achieve this using [Azure portal](https://portal.azure.com/signin/index/?cdnIndex=4&l=en.en-us) or [Azure Storage Explorer](http://storageexplorer.com/),
 
@@ -678,7 +337,9 @@ Move on-prem data to Azure blob using Polybase.
 
 At this point, our data is exported sucessfully Azure Storage. It is easily accessible from HDI, for instance, using Hive or Spark query languages. Update and Merge can easily be achieved where HDI outputs to blob or other destinations.
 
-##### Integrate exported data back to HDI  (Hive example) 
+>For detailed information on [Creating PolyBase T-SQL objects](https://msdn.microsoft.com/en-us/library/mt652315.aspx).
+
+##### Integrate exported data back to HDI  (Hive example)
 The exported data can now be loaded back to HDI for ETL, Update or Merge tasks.
 
 ```
@@ -710,20 +371,1130 @@ CREATE EXTERNAL TABLE DATAANALYTICS.Product(
 	rowguid string,
 	ModifiedDate timestamp
 )
-ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n'
 STORED AS TEXTFILE LOCATION 'wasb://<container_name>@<storage_account_name>.blob.core.windows.net/product';
-```  
+```
 
-See example above for an example where data residing on blob was integrated with SQL Datawarehouse. ([Integrating data from SQL sources with HDInsight via SparkSQL](#integrating-data-from-sql-sources-with-hdinsight-using-sparksql))  
+> Specific Hive queries to be ran on
+this table is beyond the scope of this tutorial.   
+
+At this point, the `Product` external table is available to the HDInsight cluster for processing. Results from parallelized jobs (on the Product table)
+can equally be saved back to the blob location, to be easily re-ingested back to the SQL Server 2016 using PolyBase, for instance.  
+
+```
+SELECT * FROM Product;
+```   
+
+#### Query Scale-out (Predicate Pushdown) Pipeline  
+This pattern applies to SQL Server 2016 with PolyBase support and Hortonworks HDP 2.4 on Linux found on Azure market
+place.    
+
+
+![Use Case 1-Architecture](./assets/media/pushdown-architecture.png "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")  
+
+#### Resource Deployment  
+
+Divided into two stages.  
+##### One Click deploy:  
+
+Clicking button below creates a new `blade` in Azure portal with the following resources deployed:
+
+1. One SQL Server 2016 with PolyBase support (IAAS)  
+
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1c.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+
+##### Extra manual deploy:
+The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
+###### Start PolyBase service in deployed SQL Server 2016  
+The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase services (Data Movement and Engine Services) are tied to the network identification of the original installation, causing both services not to start automatically. Trying to start the service manually gives an error.
+
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-RESTART11.PNG "PolyBase Service fails to start on deploy")
+
+Let's walk through restarting PolyBase service.
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE1.PNG "PolyBase Service fails to start on deploy")
+
+
+
+![PolyBase Service fails to start on deploy](./assets/media/POLYBASE-DEADSERVICE2.PNG "PolyBase Service fails to start on deploy")
+You would need to reinstall PolyBase as a feature on the SQL Server instance tied to your authentication.  
+
+The following will walk you through the reinstallation process using the SQL Server ISO that is pre-loaded on the VM.  
+
+1.  Remove PolyBase as a feature:
+	- Go to **Program and Features**  on the SQL Server VM _**(Control Panel\Programs\Programs and Features)**_  
+
+	- Select the version of Microsoft SQL Server 2016 installed (64bit in this case) and click on **Uninstall/Change**
+	![Uninstall/Change PolyBase](./assets/media/POLYBASE-RESTART1.PNG "Change the MSSQL installation to remove PolyBase")  
+
+	- Click on **Remove**
+	![Click on Remove on MSSQLSERVER Instance](./assets/media/POLYBASE-RESTART2.PNG "Click on Remove on MSSQLSERVER Instance")  
+
+	- Select **MSSQLSERVER** Instance and click on **Next** to proceed
+	![Select MSSQLSERVER Instance](./assets/media/POLYBASE-RESTART3.PNG "Select MSSQLSERVER Instance")
+
+	- Select **PolyBase Query Service for External Data** and keep clicking on **Next** to remove PolyBase.
+	![Remove PolyBase from MSSQLSERVER Instance](./assets/media/POLYBASE-RESTART4.PNG "Remove PolyBase from MSSQLSERVER Instance")
+
+	- Remove
+	![Final PolyBase removal](./assets/media/POLYBASE-RESTART5.PNG "Final PolyBase removal")
+
+At this point PolyBase is completely uninstalled from the SQL Server 2016. Now we will reinstall and start services.
+
+2. Reinstall PolyBase:
+A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.   
+	- Navigate to **C:\TUTORIAL_EXTRAS_OPEN_ME\SQLServer_13.0_Full** on the VM and click on **setup** icon.
+	![Start PolyBase Setup](./assets/media/POLYBASE-RESTART6.PNG "Starting PolyBase Setup")  
+
+	- Go to **Installation** on the left tab and then click on **New SQL Server stand-alone installation or add features to an existing installation**
+		![Add PolyBase as a feature](./assets/media/POLYBASE-RESTART7.PNG "Add PolyBase as a feature")
+
+	- Click through to **Installation Type** on the left column and then select **MSSQLSERVER** as the instance you would love to add PolyBase on to.
+	![Select MSSQLSERVER as Instance for PolyBase](./assets/media/POLYBASE-RESTART8.PNG "Select MSSQLSERVER as Instance for PolyBase")
+
+	- Check the **PolyBase Query Service for External Data** box and click **Next**
+	![Select PolyBase as a feature](./assets/media/POLYBASE-RESTART9.PNG "Select PolyBase as a feature")  
+
+	- Select SQL Server as a standalone instance
+		![Single PolyBase Instance](./assets/media/POLYBASE-RESTART12.PNG "Single PolyBase Instance.")  
+
+	- Continue to Install
+		![Single PolyBase Instance](./assets/media/POLYBASE-RESTART13.PNG "Single PolyBase Instance.")  
+
+	- Final confirmation
+		![Single PolyBase Instance](./assets/media/POLYBASE-RESTART14.PNG "Single PolyBase Instance.")  
+
+	- Make sure that PolyBase services start automatically and are running normally; without affecting any SQL Service.
+		![Confirm PolyBase and MSSQLSERVER Services are running](./assets/media/POLYBASE-RESTART10.PNG "Confirm PolyBase and MSSQLSERVER Services are running.")  
+
+###### Mount the  AdventureWorks Databases
+It is possible when you log on to the virtual machine, the databases will be in **"Recovery Pending"** mode.
+![Databases in Recovery State](./assets/media/DB-RECOVERY1.PNG "Databases in Recovery State")
+
+To fix this, navigate to **C:\LOG**, delete all the old logs and restart MSSQLSERVER service.
+
+###### Install HDP Hadoop Sandbox
+1. Login on to [Azure Portal](https://portal.azure.com)  
+
+1. Navigate to Azure Market Place and search for **"Hadoop"**. Select the HortonWorks Sandbox.  
+![Azure Market Resource Search Page](./assets/media/PORTAL-PAGE.PNG "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")
+
+1.  Select Resource Manager as the deployment model.
+![Select Resource Manager Deployment](./assets/media/SELECT-HDP.PNG "Resource Manager Deployment")  
+
+1.  Set Sandbox basic settings.
+![Set Hadoop Basic Settings](./assets/media/SELECT-HDP-2.PNG "Basic Settings")
+
+1.	Choose virtual machine Size.  
+Available machines depend on your subscription. More cores and RAM gives better performance.   
+![Set VM Size](./assets/media/SELECT-HDP-4.PNG "VM Size")
+
+1. Set other features like network and storage.
+![Set other features](./assets/media/SELECT-HDP-5.PNG "VM Size")
+
+	> **IMPORTANT NOTE:**  
+	>
+	>it is advised to add this machine to the same Virtual Network as your SQL Server 2016 (IAAS). As both systems need visibility, this step makes connectivity easier between systems.
+
+1. Validate your configuration.  
+Make sure it passes successfully before continuing.
+![Set other features](./assets/media/SELECT-HDP-6.PNG "VM Size")
+
+1. Read EULA and purchase.  
+Make sure it passes successfully before continuing.
+![Set other features](./assets/media/SELECT-HDP-7.PNG "VM Size")
+
+#### Manage HDP VM via Ambari Views
+
+##### Activate access to Ambari  
+By default Ambari WebUI is not activated on the HDP VM. A manual step is required.  
+
+Activate the Ambari portal as an admin
+via the following steps:  
+
+1. ssh into the VM and run the following command as the root user  
+`ambari-admin-password-reset`
+1. When prompted enter a password. This action restarts Ambari server.  
+
+1. Finally run command  
+`ambari-agent restart`
+1. Point browser to `http://<hostname/ipaddress>:8088`  
+	- Enter the user "admin" and put the password you set up (via ssh on VM)
 
 
 
 
+##### Hadoop configuration and tuning used for HDP Hadoop VM  
+
+>**IMPORTANT NOTE**
+>  
+> Changes have been made between MapReduce and MapReduce2. In MapReduce2 running on HDP (2.X), resource management can now be reused between engines. MapReduce can now focus completely on data processing while Resource Manager and YARN provides a user the ability to run multiple applications in Hadoop that share the same resources.  
+
+###### Essential information and flags to set in configurations.
+- On yarn-site.xml  
+	- **yarn.nodemanager.resource.memory-mb** : Total amount of memory given to the Resource Manager.
+	- **yarn.scheduler.minimum-allocation-mb** : Minimum RAM yarn allocates containers.
+	- **yarn.nodemanager.vmem-pmem-ratio** : Memory allocations for Map tasks – Virtual memory upper limit.  
+	- **yarn.nodemanager.resource.cpu-vcores** : Number of virtual cores allocated. Best practice is to have 1 or 2 containers per disk per core.
+	- **yarn.nodemanager.delete.debug-delay-sec** : For diagnosing YARN application problems. It's the number of seconds after application execution for nodemanager's deletion service to clean up the localized file and log directories. A value of 600 means 10 minutes.
+
+
+- On mapred-site.xml
+	- **mapreduce.map.memory.mb** : Memory size for Map tasks.
+	- **mapreduce.reduce.memory.mb** : Memory size for Reduce tasks. Should be twice Map size.
+	- **mapreduce.map.java.opts** : Upper limit of the physical RAM for Map task JVM.
+	- **mapreduce.reduce.java.opts** : Upper limit of the physical RAM for Reduce task JVM.
+
+These tuning parameters can be made directly on the xml configuration files or managed via Ambari. We will use Ambari to make these configurations, save the updated files and copy them over to the Hadoop directory under PolyBase installation.
+
+
+###### Set MapReduce2 configurations.
+- Login to Ambari view with **_admin_** as username and the password you created via ssh.
+![Ambari Login Form](./assets/media/AMBARI-LOGIN.PNG "Login")  
+
+- Begin tuning of MapReduce2 service memory settings.
+![Ambari Configs](./assets/media/AMBARI-CONFIG.PNG "Configurations")   
+
+	Create a new Configuration Group (**TestGroup** in this case). Default group is not allowed to be modified.
+	![Setting New Configuration Manager](./assets/media/AMBARI-NEW-CONFIG-MGR2.PNG "New Config Manager")
+
+	Click on `Manage Hosts` to attach our VM to this new Configuration Group.  
+	![Manage Hosts](./assets/media/AMBARI-NEW-CONFIG-MGR3.PNG "Manage Hosts")
+
+	Attach VM to Configuration Group.
+	![Attach Hosts](./assets/media/AMBARI-NEW-CONFIG-MGR4.PNG "Attach Hosts")
+
+	![Host with IP](./assets/media/AMBARI-NEW-CONFIG-MGR5.PNG "Attach Hosts on the IP")  
+
+	Make memory modifications in new group.
+	![Change to new group](./assets/media/AMBARI-NEW-CONFIG-MGR6.PNG "Change to new Group")   
+
+	Override memory settings by clicking on the **Override** symbol.
+		![Override Settings](./assets/media/AMBARI-NEW-CONFIG-MGR12.PNG "Override Settings")  
+
+	Increase the map and reduce memory. In this scenario for a 28GB Ram and 2 Core machine, set the Map Memory to 4GB (4098MB) and Reduce Memory as 8GB (8192MB). Sort Allocation Memory adjusts by default to half the size of the Map Memory.  Save configuration changes.
+	> NOTE
+	> The rectangles in blue alert you that there are other dependent services that need to be adjusted with memory updates for MapReduce Framework.    
+
+	![Change to MapReduce Framework ](./assets/media/AMBARI-NEW-CONFIG-MGR8.PNG "Change to new Group")  
+
+	Confirm settings update for the dependent services, highlighted by the blue rectangle, in diagram. These changes in the **Recommended Value** Column are auto adjusted and optimized based on memory allocations for the MapReduce2 Framework. They are **recommended and not enforced**. Easily uncheck the box to avoid updating it and keeping the current value. Click **OK** to save.
+	![Confirm Dependent Service Update ](./assets/media/AMBARI-NEW-CONFIG-MGR9.PNG "Confirm dependent service updates")  
+
+	Restart MapReduce service after this modification to validate modifications. After restart, down and save the updated MapReduce configuration settings.
+	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR13.PNG "Download Client Configs")  
+
+###### Set YARN configurations.
+- Follow the same steps for MapReduce2 to create a new configuration group.
+
+- Switch to the new **YARN** configuration group to make memory modifications.  
+	Set total memory allocations for all YARN containers on a node via UI.  
+
+	- Rectangle 1 sets `yarn.nodemanager.resource.memory-mb`
+	- Rectangle 2 sets `yarn.scheduler.minimum-allocation-mb`
+
+	![Configure YARN Memory Configs](./assets/media/AMBARI-NEW-CONFIG-MGR14.PNG "Configure YARN memory")  
+
+	> IMPORTANT NOTE  
+	> CPU related settings can be modified also via the UI  
+	>  
+	> - Number of virtual cores.  
+	> - Minimum and maximum virtual cores sizes  
+	> - Percentage of physical CPU for all containers on the node.  
+	>
+	> The current values perform well. No modifications done for this tutorial.  
+	>
+	> ![CPU related settings](./assets/media/AMBARI-NEW-CONFIG-MGR15.PNG "CPU related settings")
+
+- Update application and log deletion service timer.
+	After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  
+	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
+
+- Download modified client config.  
+Restart YARN service after this modification to validate modifications. After restart, down and save the updated YARN configuration settings.
+![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
+
+
+> IMPORTANT NOTE  
+> It is very important to set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
+>
+> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services. Therefore we will copy over the downloaded configurations to
+
+#### Override PolyBase's Hadoop configurations with updated files.  
+Unzip the downloaded config files. The MapReduce zip folder has the files of relevance (core-site.xml, mapred-site.xml, hdfs-site.xml)
+
+PolyBase to Hadoop connectivity uses the following configuration levels (in the order).  
+
+1.  Hadoop Configuration folder in PolyBase installation folder on SQL Server.
+1. Configurations set in Ambari  
+1. Configurations set on the VM.
+
+- To persist configurations, overwrite the variables in the PolyBase configuration folder. That way PolyBase uses this as primary.
+	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
+	- Back the following existing files  
+		- hdfs-site.xml
+		- core-site.xml
+		- mapred-site.xml
+	- Copy over the downloaded/updated versions (from Ambari configuration modifications) to this folder.
+	-
+	- Restart SQL Server service.
+		![Select MSSQL Server Service](./assets/media/AMBARI-NEW-CONFIG-MGR17.PNG "Select MSSQL Server Service")  
+
+		Dependent services on the SQL Server will be restarted as well.
+		![Restart PolyBase Services](./assets/media/AMBARI-NEW-CONFIG-MGR18.PNG "Restart PolyBase Services")  
+
+
+##### Data Source
+1. AdventureWorks2012.
+
+**Essential House keeping**  
+> From SSMS, you may encounter the following error message while trying to export your tables.
+>
+>  
+> Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.  
+>
+> The following configurations must be set correctly.
+> 1. PolyBase must be allowed to export external tables.
+> 1. PolyBase to Hadoop connectivity must be set.
+> 1. The legacy compability estimation must be turned off.  
+> 1. Your database compability level must be at least 120.
+
+
+- Allow PolyBase to export external tables  
+
+```
+sp_configure 'allow polybase export', 1;
+RECONFIGURE;
+GO	;
+```
+
+- Allow PolyBase to connect to Hadoop
+
+```
+-- Different values map to various external data sources.  
+-- Example: value 7 stands for Azure blob storage and Hortonworks HDP 2.X on Linux/Windows.  
+
+sp_configure @configname = 'hadoop connectivity', @configvalue = 7;   
+RECONFIGURE ;  
+GO   ;
+```
+
+- Confirm legacy compability estimation is turned off.  
+
+```
+SELECT  name, value  
+    FROM  sys.database_scoped_configurations  
+    WHERE name = 'LEGACY_CARDINALITY_ESTIMATION';  
+```
+
+If set correctly, you would see  
+
+![Legacy cardinality Estimator](./assets/media/legacy-estimation.PNG "Legacy cardinality")  
+
+- Check database compatibility level and alter to at least 120 if needed.  
+
+Display all database levels
+```
+SELECT    d.name, d.compatibility_level  
+    FROM  sys.databases AS d;
+```
+
+Alter level if needed, for my case I chose 130.
+
+```
+SELECT ServerProperty('ProductVersion');  
+go  
+
+ALTER DATABASE your_database_name  
+    SET COMPATIBILITY_LEVEL = 130;  
+go  
+
+SELECT    d.name, d.compatibility_level  
+    FROM  sys.databases AS d  
+    WHERE d.name = 'your_database_name';  
+go  
+
+```
+
+Outputs  
+
+| name          | compability_level
+| ------------- |:-------------:|
+| `your_database_name`| 130 |
+
+
+At this point, our SQL Server 2016 is ready to support PolyBase transactions.
+
+
+### Required PolyBase Objects    
+The following PolyBase T-SQL objects are required.
+
+1. Database scoped credential
+
+1. External Data source  
+
+1. External file format  
+
+1. External data source (i.e blank external table) that points to a directory on HDFS.
+
+1. Statistics on external table.
+
+> **IMPORTANT NOTE:**  
+>
+> **Creating Statistics on external tables is very important for PolyBase. This is how the query optimizer makes cost-based decisions on when to dynamically pushdown computation to Hadoop MapReduce.**  
+>
+>For detailed information on [Creating PolyBase T-SQL objects](https://msdn.microsoft.com/en-us/library/mt652315.aspx).
+
+####  Create the T-SQL objects
+Polybase can create objects that depend on either Hadoop or Azure Blob. For the purposes of this pattern, we will be creating our external data source that depends on Hadoop.
+Connect to the AdventureWorks2012 database pre-loaded on the earlier created SQL Server 2016 and following instructions below.  
+
+**LINKS**  - You can interact with SQL Server 2016 via [Visual Studio](https://www.visualstudio.com/) or [Microsoft SQL Server Management Studio](https://msdn.microsoft.com/en-us/library/mt238290.aspx).  
+
+- Create a master key on the database.  
+This step is very important to encrypt the credential secret during network I/O transmission.
+
+```
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'Us3@M0reS3cur3dP@ssw0rd!';
+```
+
+- Use master key to create a database scoped credential for your hdfs connectivity.  
+*Parameters:*  
+    - **IDENTITY:** Hadoop Kerberos user with read, write, execute permissions
+    on the HDFS directory.
+    - **SECRET:** Hadoop Kerberos password for user specied in **IDENTITY** above
+
+```
+CREATE DATABASE SCOPED CREDENTIAL HadoopStorageCredential
+WITH IDENTITY = '<your_hadoop_user>', Secret = '<hadoop_user_password>';
+```
+
+- Create your external data source.
+
+*Parameters:*  
+    - **LOCATION:**  Hadoop NameNode IP address and port. (8020 for HDP 2.X)   
+    - **RESOURCE MANAGER LOCATION (Optional):** Hadoop Resource Manager location to enable pushdown computation. (Use port 8050 for HDP 2.X)  
+    - **CREDENTIAL:** The database scoped credential we created earlier.
+
+```
+CREATE EXTERNAL DATA SOURCE MyHadoopCluster WITH (  
+        TYPE = HADOOP,   
+        LOCATION ='hdfs://<namenode_private_ip_address>:8020',   
+        RESOURCE_MANAGER_LOCATION = '<resource_manager_private_ip:8050',   
+        CREDENTIAL = HadoopStorageCredential      
+);  
+```
+
+- Create an file format for external source.  
+In Polybase this is important to describe the format/structure of the input data.  
+*Parameters:*  
+    - **FORMAT TYPE:** Data format in Hadoop. *Examples DELIMITEDTEXT,  RCFILE, ORC, PARQUET.*   
+
+```
+CREATE EXTERNAL FILE FORMAT TextFileFormat WITH (
+	FORMAT_TYPE = DELIMITEDTEXT,
+	FORMAT_OPTIONS (FIELD_TERMINATOR = '|',
+	USE_TYPE_DEFAULT = TRUE)
+);
+```
+
+- Create an external table and define table schema.
+
+> **Important Note**  
+The external table's schema definitions must match the schema of table we are trying to project. Remember to decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`.
+
+
+###### Expand the `Columns` folder in SQL Server Management Studio (SSMS) to examine.   
+
+![Product Table Schema](./assets/media/product-schema-scaled.png "Product Table")  
 
 
 
+###### Point External table to a directory in Hadoop.
+
+```
+CREATE EXTERNAL TABLE Product_HDFS (
+	ProductID INT,
+	Name NVARCHAR(50),
+	ProductNumber nvarchar(25),
+	MakeFlag BIT,
+	FinishedGoodsFlag BIT,
+	Color NVARCHAR(15),
+	SafetyStockLevel smallint,
+	ReorderPoint smallint,
+	StandardCost money,
+	ListPrice money,
+	Size NVARCHAR(5) ,
+	SizeUnitMeasureCode NCHAR(3) ,
+	WeightUnitMeasureCode NCHAR(3),
+	Weight decimal(8, 2),
+	DaysToManufacture int,
+	ProductLine NCHAR(2),
+	Class NCHAR(2),
+	Style NCHAR(2),
+	ProductSubcategoryID int,
+	ProductModelID int,
+	SellStartDate datetime,
+	SellEndDate datetime ,
+	DiscontinuedDate datetime,
+	rowguid NVARCHAR (255),
+	ModifiedDate datetime
+)
+WITH (LOCATION='/product',
+	  DATA_SOURCE = MyHadoopCluster,
+	  FILE_FORMAT = TextFileFormat
+);
+```
+
+*Parameters:*  
+1. **LOCATION:** Path to a file or directory that contains the actual data (this is relative to hdfs root directory).   
+
+A quick confirmation is seen with a **SELECT**
+
+```
+SELECT * FROM dbo.Product;
+```
+
+![Empty Product table to show external file created](./assets/media/empty-product-table.PNG "/Empty Product Table")
+
+###### Project and export data  
+For this pattern, we will assume product related ETL is performed on Hadoop. This ETL generates a **Product** table that is needed also in SQL Server ETL. We will project sample data to simulate this from AdventureWorks2012 Product table.
+
+To export on-prem data to HDFS using Polybase.  
+
+`INSERT INTO dbo.Product_HDFS SELECT * FROM AdventureWorks2012.Production.Product;`  
+
+> **NOTE**  
+> This can also be used for a **One-time BULK Copy** when migrating data to HDFS from SQL Server 2016.  
+
+At this point, our data is exported successfully to HDFS. PolyBase exports multiple files that may or may not contain data.
+
+![Empty Product table to show external file created](./assets/media/SELECT-HDP-8.PNG "Data exported in HDFS")
+
+
+###### Query scale out example to Hadoop MapReduce  
+Predicate pushdown can improve query performance; if a user writes a query that selects a subset of rows from an external table.
+
+PolyBase from SQL Server 2016 initiates a MapReduce job to retrieve only the rows that match the predicate ProductID > 50 on Hadoop. As the query can execute completely without scanning all rows, the MapReduce only the returns rows that meet the predicate criteria back to the SQL Server.
+
+###### Benefits  
+1. Significant save on execution time; especially for very large table.  
+
+1. Less temporary storage space is used by the PolyBase process for unnecessary rows. This can increase exponentially with the table size.
+
+```
+SELECT p.ProductID AS ProductID, p.Name AS ProducName, p.ProductLine as ProductLine, p.SafetyStockLevel AS SafetyStockLevel, p.SellStartDate as SellStartDate, p.SellEndDate as SellEndDate, ((sod.OrderQty * sod.UnitPrice) * (1.0 - sod.UnitPriceDiscount)) as TotalSalesAmt
+FROM dbo.Product_HDFS AS p
+RIGHT JOIN AdventureWorks2012.Sales.SalesOrderDetail AS sod
+ON p.ProductID = sod.ProductID
+WHERE p.ProductID > 50
+ORDER BY p.ProductID ASC OPTION (FORCE EXTERNALPUSHDOWN);
+```
+
+- Map Reduce UI  
+	![Map Reduce job accepted](./assets/media/MR-ACCEPTED.PNG "MapReduce ACCEPTED")
+
+	![MapReduce job finished](./assets/media/MR-FINISHED.PNG "MapReduce FINISHED")
+
+- Execution time Summary:
+	- PolyBase records ~19 seconds total round trip time.
+		- ~16 seconds for MapReduce including cold start. This can be optimized further with Hadoop tuning.
+
+	![PolyBase roundtrip time](./assets/media/SQL-SUMMARY.PNG "PolyBase SQL Summary")
 
 
 
+## Integrating NoSQL Data From HDInsight With Relational Data on SQL Datawarehouse
 
+## Use Case Summary   
+**INTEGRATING TRANSACTIONAL NoSQL DATA WITH REFERENTIAL/RELATIONAL DATA FROM SQL DW ON HDInsight**
+
+Currently, integrating data residing on On-Prem Hadoop systems with Azure compute platforms, like SQL Data Warehouse, is not a trivial process.  
+
+In order to get better end-to-end throughput, an intermediate copy to blob would be needed; using **PolyBase and Azure Data Factory StagedCopy**. Azure Data Factory is able to apply transformations that match PolyBase/SQL source requirements.  
+
+>Check out [Staged Copy using PolyBase](https://azure.microsoft.com/en-us/documentation/articles/data-factory-azure-sql-data-warehouse-connector/#staged-copy-using-polybase) for further details.  
+
+This workflow, although offers a way to virtualize data on-prem and in cloud, focuses more on data copy and not integration nor harmonization. This can easily get expensive in terms of resources (for staged copy), security concerns (additional step to encrypt) and so on.   
+
+Our tutorial tries to focus on harmonization processes and routes, hence we will achieve the update and merge using Hadoop sources in Azure.  
+
+
+#### Use Case Overview
+Let us assume a scenario can exist where all sales information and transactions are sensitive and need to be kept protected on a SQL data source. Now an ETL that creates inventory and profit projections/visualizations on Power BI may need NoSQL product data residing on Azure Data Lake Store (ADLS) and historical sales data. This becomes a bit tricky due to the disparate source of data and the complex computation to generate this. The Historical ETL can only run on SQL DW (due to the location of the sales data) and NoSQL product data transactions run close to ADLS. We need to figure out an intelligent approach of virtualizing this scenario without increasing resource overhead and network I/O.   
+
+To solve this and show case the power of this use case, we can demonstrate how a complex query can be constructed at the SQL Data Warehouse side (for the sales data) and without materializing the generated tables leverage parallelized in-memory computation of Spark to bring in the NoSQL product data.  
+
+#### Benefit(s)  
+- Click stream (NoSQL) data, like real-time information, can be combined with referential (SQL) data, like products in stock, to decide
+how to control inventory of products for profitability and business intelligence.
+
+- Queries can be scaled out and parallelized using Hive, HBase or Spark.  
+
+- HDInsight, out of the box, supports connectivity to relational data sources via `JDBC`. Using Views, complex joins can be
+materialized on SQL Datawarehouse and results pulled into Spark for further processing.
+
+- Complex joins can be done between Facts and Dimensions, allowing easier Update and Merge operations.
+
+#### Pipeline  
+![Use Case 2-Architecture](./assets/media/uc2_2.PNG "HDI with sQL DW Hybrid Analytics")  
+
+#### Resource Deployment    
+This use case requires the following resources.
+1. One Azure SQL Data Warehouse
+1. One HDInsight cluster
+1. One Azure Data Lake Store
+1. One Service Principle Identity (SPI)
+1. One certificate for access control  
+
+##### One Click Deployment  
+Clicking button below creates a new `blade` in Azure portal with the following resource(s) deployed:
+
+- One Azure SQL Data Warehouse  
+
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC2a.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+
+
+##### Manual Deployment  
+
+###### HDI Cluster and Azure Data Lake Store (ADLS) Authentication and Connectivity.  
+- **Authentication:** A certified identity is required in Azure Active Directory (AAD).   
+
+- **Connectivity:** ADLS exposes a web-based RESTful interface to allows calls to be made.   
+	- Calls need to be made with a JSON Web Token (JWT) that is obtained for identity from AAD.
+
+- **Service Principle Identity (SPI):**  A headless user in the AAD that is associated with a certificate.  
+
+- **Credential Creation:** During the creation of the HDI Cluster, a SPI (and its certificate) is created in AAD and stored in the cluster.
+
+- **Runtime Processing:** At runtime, the web-credential is used for the interaction. The associated web-token is passed to AAD which exchanges it with a JWT. The JWT is used to make the actual calls.
+
+- **Data Access:** Different users can interact with the ADLS using the same SPI. Hence the SPI needs access to your data.
+	- Data is read and written by the SPI.
+
+##### Create the Certificate and Service Principal Identity  
+
+
+###### Requirements
+
+1. An Active [Azure](https://azure.microsoft.com/) subscription.  
+1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands.   
+
+
+If you have created a SPI and certificate before, feel free to jump to Step 4 below after Step 1, otherwise continue to create one quickly.  
+
+###### 1. Login in to Azure and Add Subscription.  
+
+- Open Windows PowerShell
+
+- Add Azure Subscription  
+
+	`Add-AzureRmAccount`  
+
+OR  
+
+- Login into Azure if you have previously added your Azure subscription.  
+
+	` Login-AzureRmAccount`
+
+
+###### 2. Create a PFX certificate
+
+On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
+
+```
+$certFolder = "C:\certificates"
+$certFilePath = "$certFolder\certFile.pfx"
+$certStartDate = (Get-Date).Date
+$certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
+$certEndDate = $certStartDate.AddYears(1)
+$certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
+$certName = "HDI-ADLS-SPI"
+$certPassword = "new_password_here"
+$certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
+
+mkdir $certFolder
+
+$cert = New-SelfSignedCertificate -DnsName $certName -CertStoreLocation cert:\CurrentUser\My -KeySpec KeyExchange -NotAfter $certEndDate -NotBefore $certStartDate
+$certThumbprint = $cert.Thumbprint
+$cert = (Get-ChildItem -Path cert:\CurrentUser\My\$certThumbprint)
+
+Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswordSecureString
+
+```
+
+
+###### 3. Create the Service Principal Identity (SPI)  
+Using the earlier created certificate, create your SPI.
+
+```
+$clusterName = "your_new_hdi_cluster_name"
+$certificatePFX = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certFilePath, $certPasswordSecureString)
+$credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
+```
+
+Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
+```
+$application = New-AzureRmADApplication -DisplayName $certName -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Use this cmdlet, if you installed Azure PowerShell 1.0
+```
+$application = New-AzureRmADApplication -DisplayName $certName `
+                        -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
+                        -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
+                        -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Retrieve the Service Principal details
+```
+$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
+```
+
+###### 4. Retrieve SPI information needed for HDI deployment
+
+On Windows PowerShell
+
+- Application ID:  
+`$servicePrincipal.ApplicationId`
+
+- Object ID:  
+`$servicePrincipal.Id`
+
+- AAD Tenant ID:  
+`(Get-AzureRmContext).Tenant.TenantId`
+
+- Base-64 PFX file contents:  
+`[System.Convert]::ToBase64String((Get-Content $certFilePath -Encoding Byte))`
+
+- PFX password:  
+`$certPassword`
+
+
+###### Deploy Azure Data Lake Store from Portal
+Follow instructions on [Getting Started with Azure Data Lake Store](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#signup)  
+
+###### Deploy a Spark HDInsight Cluster with Azure Data Lake Store as secondary storage from Portal
+Using the SPI and Certificate created above, follow instructions to [Create an HDInsight cluster with Data Lake Store using Azure Portal](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-hdinsight-hadoop-use-portal/).  
+
+
+> IMPORTANT NOTE   
+**Create a Spark cluster instead of a Hadoop Cluster.**  
+
+###### Manually load AdventureWorks sample data.  
+Follow link to load [Sample data into the deployed SQL Data Warehouse](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/)  .
+
+
+#### Data Source
+1. **AdventureWorks** Dataset (Loaded manually above)
+
+##### Generate Referential Data in SQL Data Warehouse
+Generate a historical **VIEW** of our sales data until last year.  
+
+```
+-- Creating Historical Sales Data as View (ie, Avoid materializing the results)
+CREATE VIEW SalesFromPastYears
+AS
+SELECT
+    [SalesOrderNumber]
+    ,[SalesOrderLineNumber]
+    ,p.EnglishProductName as ProductName
+    ,st.SalesTerritoryCountry
+    ,[OrderQuantity]
+    ,[UnitPrice]
+    ,[ExtendedAmount]
+    ,[SalesAmount]
+    ,(convert(date, CAST(OrderDateKey as varchar))) AS [OrderDate]
+FROM [dbo].[FactInternetSales] a
+inner join dbo.DimProduct p on a.ProductKey = p.ProductKey
+inner join dbo.DimSalesTerritory st
+on st.SalesTerritoryKey = a.SalesTerritoryKey
+where year(convert(date, CAST(OrderDateKey as varchar))) < 2015
+```
+
+Creating this `VIEW` does not materialize the table as it may be very large and slow computation on SQL Data Warehouse. The result of this complex query is only materialized at execution time from Spark. This workflow begins to demonstrate how we can leverage the parallelized in-memory computation scenarios that combines the storage power of SQL Data Warehouse and the speed of Spark.
+
+
+#### Start the spark shell pointing to the JDBC connector.  
+With the JDBC defined variables, connect and load data from the SQL DW table.  
+
+  **NOTE:** All JDBC jar files are available on HDI Clusters by default at **/usr/hdp/<version_of_hdp_number>/hive/lib/**  
+
+```
+$SPARK_HOME/bin/spark-shell --jars  /usr/hdp/current/hive-server2/lib/sqljdbc4.jar
+```
+
+If Spark shell loads successfully, we can now connect to the SQL DW Table **FactInternetSale** and read the table.  
+The following Scala code defines connection variables to an Azure SQL Data Warehouse table and connects to the external table; making it available for querying.    
+
+```
+scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"  
+```
+
+```
+scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"  
+```
+
+**NOTE**  
+Since our exercise implements a hybrid query harmonization between SQL DW and NoSQL, we will use the hiveContext. This will give us the SparkSQL commands and also Hive functionalities that will
+let use perform joins. We need to do this because temporary tables are registered in-memory and attached to a specific SQLContext.
+
+#### Construct a HiveContext (with SQL implicit commands) and fetch data from SQL DW.
+
+- Import HiveContext package
+
+```
+scala> import org.apache.spark.sql.hive.HiveContext
+
+```
+
+- Construct a HiveContext and attach to existing Spark context.  
+
+  In order to work with Hive from Spark, you must construct a HiveContext.  
+
+  **NOTE** -  HiveContext inherits from SQLContext and also benefits from all SQL commands available from SQLContext. It is still possible to create a HiveContext without a Hive deployment. For details visit [Spark SQL Docs](http://spark.apache.org/docs/latest/sql-programming-guide.html)  
+
+```
+scala> val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)
+```
+
+```
+scala> import hiveContext.implicits._
+```
+
+- Fetch Historical Sales data from SQL Data Warehouse
+Right now we can materialize a **VIEW** of our  Historical Sales and pull it in like a regular SQL table using SparkSQL.  
+
+> IMPORTANT NOTE  
+> **dbo.SalesFromPastYears** is a **VIEW** (not a TABLE) on SQL Data Warehouse side.  
+
+
+```
+scala>  val table = "(SELECT * FROM dbo.SalesFromPastYears) AS HistoricalSales"
+```
+
+Now fetch data.  
+
+```
+scala> val dwHistoricalSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()
+```
+
+
+To confirm a success connection, we should get a description of the columns of the table **HistoricalSales** as a **dataframe** `dwHistoricalSales`
+
+> dwHistoricalSales: org.apache.spark.sql.DataFrame = [SalesOrderNumber: string, SalesOrderLineNumber: int, ProductName: string, SalesTerritoryCountry: string, OrderQuantity: int, UnitPrice: decimal(19,4), ExtendedAmount: decimal(19,4), SalesAmount: decimal(19,4), OrderDate: date]
+
+
+You can view the data in `dwHistoricalSales` by a call to action `.show`. This will display the **top 20 rows** by fetching results from the executors back to the driver node.
+
+
+  ```
+  scala> dwHistoricalSales.show
+  ```
+
+  To view the dataframe schema.  
+
+  ```
+  scala> dwHistoricalSales.printSchema
+  ```
+
+  You should a similar output as the following:  
+
+  >root
+  	|-- SalesOrderNumber: string (nullable = false)  
+   	|-- SalesOrderLineNumber: integer (nullable = false)  
+   	|-- ProductName: string (nullable = false)  
+   	|-- SalesTerritoryCountry: string (nullable = false)  
+   	|-- OrderQuantity: integer (nullable = false)  
+   	|-- UnitPrice: decimal(19,4) (nullable = false)  
+   	|-- ExtendedAmount: decimal(19,4) (nullable = false)  
+   	|-- SalesAmount: decimal(19,4) (nullable = false)  
+   	|-- OrderDate: date (nullable = true)  
+
+
+
+  Now we will register our dataframe as a table in our SQLContext i.e. making it queriable like another relational table  
+  ```
+  scala> dwHistoricalSales.registerTempTable("DWTableHistoricalSales")
+  ```
+
+  We now have a queriable SQL Data Warehouse table from a Spark SQLContextSQL. Table is registered as a temporary table and has all SQL commands available to SQLContext.  
+  To verify the data, a quick select will show this.  
+
+  ```
+  scala>  hiveContext.sql("SELECT * FROM DWTableHistoricalSales LIMIT 10").show
+  ```
+
+  Next we want to pull our product NoSQL data from Azure Data Lake Store (ADLS) to perform adhoc queries.
+
+  - Fetch NoSQL Product Data from ADLS via HiveContext
+
+  Spark gets Hive for free using the HiveContext. To work with Hive (our NoSQL data is imported using a HiveContext), we must create a HiveContext.   
+
+  > IMPORTANT NOTE  
+  > Let us assume that another ETL runs in cloud and produces NoSQL Product data into ADLS. The final ETL may need a hybrid scenario that combines historical sales data from SQL Data Warehouse and NoSQL Product data on ADLS.  
+  
+  - Copy sample data to ADLS Upload [this](./assets/data/DimProduct.json) sample data (**DimProduct** table in JSON format) to ADLS by following instructions from [here!](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#uploaddata)
+
+  ```
+  scala>  val adlsProductData = hiveContext.jsonFile("adl://<your_adls_store_name>.azuredatalakestore.net/<path_to_your_adls_folder>/DimProduct.json")
+  ```
+
+  To confirm a sucessful load, print the `adlsProductData` schema.
+
+  ```
+  scala> adlsProductData.printSchema
+  ```
+
+  >root  
+ |-- Class: string (nullable = true)  
+ |-- Color: string (nullable = true)  
+ |-- DaysToManufacture: string (nullable = true)  
+ |-- DealerPrice: string (nullable = true)  
+ |-- EndDate: string (nullable = true)  
+ |-- EnglishDescription: string (nullable = true)  
+ |-- EnglishProductName: string (nullable = true)  
+ |-- FinishedGoodsFlag: string (nullable = true)  
+ |-- ListPrice: string (nullable = true)  
+ |-- ModelName: string (nullable = true)  
+ |-- ProductAlternateKey: string (nullable = true)  
+ |-- ProductKey: string (nullable = true)  
+ |-- ProductLine: string (nullable = true)  
+ |-- ProductSubcategoryKey: string (nullable = true)  
+ |-- ReorderPoint: string (nullable = true)  
+ |-- SafetyStockLevel: string (nullable = true)  
+ |-- Size: string (nullable = true)  
+ |-- SizeRange: string (nullable = true)
+   |-- SizeUnitMeasureCode: string (nullable = tru  e)
+ |-- StandardCost: string (nullable = true  )
+ |-- StartDate: string (nullable = true)  
+ |-- Status: string (nullable = true)  
+ |-- Style: string (nullable = true)  
+ |-- Weight: string (nullable = true)  
+ |-- WeightUnitMeasureCode: string (nullable = true)  
+
+
+
+  ```
+  scala> adlsProductData.registerTempTable("ADLSProductTable")
+  ```
+
+  #### Perform ad-hoc complex query between SQL DW Table and ADLS external table  
+  At this point, we have referential historical sales data that is generated by a process on SQL DW and NoSQL product table that is consumed from Azure Data Lake Store, both registered in-memory on the Spark executors.  
+
+  This creates a powerful hybrid scenario. We can easily see how both storage and compute can scale in parallel. This isolates systems, making it manageable.
+
+  Using the HiveContext, performing ad-hoc queries like JOINS becomes trivial.
+
+  - Join tables
+
+  ```
+   val historicalSalesInformation = hiveContext.sql("SELECT  a.*, b.EnglishProductName as ProductName  FROM DWTableHistoricalSales a INNER JOIN ADLSProductTable b ON a.ProductKey = b.ProductKey")
+  ```
+
+  `historicalSalesInformation` is a dataframe (formerly SchemaRDD) that we can view, manipulate and export.
+
+  - View output result.
+
+  ```
+  scala> historicalSalesInformation.show
+  ```  
+
+  The results from this pattern can be used in other pipelines or exported for visualization in tools like Power BI.
+
+
+## Troubleshooting  
+
+#### Some issues and recommended fixes when integrating HDP 2.X Hadoop Sandbox and PolyBase.
+1. PolyBase and Hadoop is not yet supported on HDI Hadoop (at the time of writing).
+
+1. PolyBase only supports Hadoop from HortonWorks and Cloudera. For further information, see  [PolyBase Connectivity Configurations](https://msdn.microsoft.com/en-us/library/mt143174.aspx) for currently supported Hadoop versions.  
+
+1. Create NameNode Checkpoint before restarting HDFS service from Ambari
+
+	To avoid Namenode corruption and/or crash, it is best to put your Namenode(s) in safe mode before restarting HDFS service.  
+
+	You may observe a similar **WARNING** like outlined below
+
+	> The last HDFS checkpoint is older than 12 hours. Make sure that you have taken a checkpoint before proceeding. Otherwise, the NameNode(s) can take a very long time to start up.
+
+	**FIX**  
+	- Login to the NameNode host via ssh  
+
+	- Put the NameNode in Safe Mode (read-only mode):  
+	`sudo su hdfs -l -c 'hdfs dfsadmin -safemode enter'`  
+
+	- Create a Checkpoint once in safemode:  
+	`sudo su hdfs -l -c 'hdfs dfsadmin -saveNamespace'`
+
+1. Changing the configuration on a service (for example YARN) requires the service and most often than not other affected services, like Zookeeper and Oozie, restarted as well.   
+	Pay attention to the settings you have configured on these other services as one restart overwrites everything. For example, the general memory you have configured for Resource Manager alters the any memory changes in MapReduce2 as well, taking them back to default.  
+
+	**FIX**  
+ 	See [Copy over configs to PolyBase](#copy-over-configs-to-polybase)
+
+1. Unable to access Ambari WebUI as admin
+
+	**FIX**  
+	See [Activate access to Ambari](#activate-access-to-ambari) above.  
+
+1. Unable to parse HDP version error
+	```
+		java.lang.IllegalArgumentException: Unable to parse '/hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.gz#mr-framework' as a URI,\
+	 check the setting for mapreduce.application.framework.path
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:181)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setMRFrameworkClasspath(MRApps.java:206)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.setClasspath(MRApps.java:258)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.getInitialClasspath(TaskAttemptImpl.java:621)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createCommonContainerLaunchContext(TaskAttemptImpl.java:757)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.createContainerLaunchContext(TaskAttemptImpl.java:821)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1557)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl$ContainerAssignedTransition.transition(TaskAttemptImpl.java:1534)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory$SingleInternalArc.doTransition(StateMachineFactory.java:362)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory.doTransition(StateMachineFactory.java:302)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory.access$300(StateMachineFactory.java:46)
+	        at org.apache.hadoop.yarn.state.StateMachineFactory$InternalStateMachine.doTransition(StateMachineFactory.java:448)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:1084)
+	        at org.apache.hadoop.mapreduce.v2.app.job.impl.TaskAttemptImpl.handle(TaskAttemptImpl.java:145)
+	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1368)
+	        at org.apache.hadoop.mapreduce.v2.app.MRAppMaster$TaskAttemptEventDispatcher.handle(MRAppMaster.java:1360)
+	        at org.apache.hadoop.yarn.event.AsyncDispatcher.dispatch(AsyncDispatcher.java:183)
+	        at org.apache.hadoop.yarn.event.AsyncDispatcher$1.run(AsyncDispatcher.java:109)
+	        at java.lang.Thread.run(Thread.java:745)
+	Caused by: java.net.URISyntaxException: Illegal character in path at index 11: /hdp/apps/${hdp.version}/mapreduce/mapreduce.tar.
+	gz#mr-framework
+	        at java.net.URI$Parser.fail(URI.java:2829)
+	        at java.net.URI$Parser.checkChars(URI.java:3002)
+	        at java.net.URI$Parser.parseHierarchical(URI.java:3086)
+	        at java.net.URI$Parser.parse(URI.java:3044)
+	      at java.net.URI.<init>(URI.java:595)
+	        at org.apache.hadoop.mapreduce.v2.util.MRApps.getMRFrameworkName(MRApps.java:179)
+	        ... 18 more
+	```
+
+	**FIX**  
+		- Set `hdp.version` on SQL Server in PolyBase mapred-site.xml (_C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf_)  
+
+			<property>
+	 			<name>hdp.version</name>
+ 				<value>2.4.0.0-169</value>
+ 			</property>
+
+1. Inability to query a Namenode in Safe mode  
+	> Cannot execute the query "Remote Query" against OLE DB provider "SQLNCLI11" for linked server "(null)". EXTERNAL TABLE access failed due to internal error: 'Java exception raised on call to JobSubmitter_SubmitJob: Error [Cannot delete /user/pdw_user/.staging/job_1474057623050_0031. Name node is in safe mode.  
+
+	**FIX**  
+	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`  
+
+## Appendix  
+
+### Some TSQL HiveQL and ANSI SQL syntax intersections
+
+##### Renaming a table
+Supported on both T-SQL and HIVE with slight differences.
+- [T-SQL](https://msdn.microsoft.com/en-us/library/mt631611.aspx)
+	- SQL DW/PDW
+
+    ```  
+	RENAME OBJECT [ :: ]  [ [ database_name .  [schema_name ] ] . ] | [schema_name . ] ] table_name TO new_table_name [;]  
+
+    ```
+
+    - SQL Server and DB : Use Stored Procedure [sp_renamedb](https://msdn.microsoft.com/en-us/library/ms186217.aspx)
+
+    ```
+    sp_renamedb [ @dbname = ] 'old_name' , [ @newname = ] 'new_name'  
+
+    ```
+
+- [HIVE](http://www.tutorialspoint.com/hive/hive_alter_table.htm)
+
+```
+ALTER TABLE name RENAME TO new_name
+```
+
+##### Cloning Table schema without copying data (Create Table Like - CTL)
+Supported directly on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableLike) alone.
+
+```
+CREATE TABLE newEmptyTableWithSchema LIKE realTableWeNeedSchemaFrom;
+```
+
+However, you can achieve a similar result in T-SQL using a `SELECT INTO` statement
+
+```
+ SELECT TOP 0 * INTO newEmptyTableWithSchema FROM realTableWeNeedSchemaFrom;
+```
+
+
+##### Creating External Tables
+Supported on [HIVE](http://www.tutorialspoint.com/hive/hive_create_table.htm) and [T-SQL with PolyBase alone](https://msdn.microsoft.com/en-us/library/mt163689.aspx) on SQL Server 16 and Data Warehouse (SQL and Parallel).  
+
+
+##### Creating Table As Select (CTAS)
+Supported on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableAsSelect(CTAS)) and T-SQL for [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt204041.aspx)
+
+##### Creating External Table As Select (CETAS)
+Supported in T-SQL (with PolyBase) on [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt631610.aspx) but **NOT** supported in HIVE.    
+
+Hive supports only **CTAS** with the following ceveats **FULLY** documented on [Apache Hive Confluence Page](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL)  
+
+> CTAS has these restrictions:  
+The target table cannot be a partitioned table.  
+_**The target table cannot be an external table.**_   
+The target table cannot be a list bucketing table.
+
+
+##### Update
+Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms177523.aspx) for internal tables.
+
+> NOTE  
+`UPDATE` is not supported on external tables. Only the following are allowed on external tables.  
+- CREATE and DROP TABLE  
+- CREATE AND DROP STATISTICS  
+- CREATE AND DROP VIEW  
+
+>For further information check [Limitations and Restrictions of T-SQL Create External Table](https://msdn.microsoft.com/en-us/library/dn935021.aspx)
+
+Support for [HIVE] is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
+
+
+##### Delete
+Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms189835.aspx) for internal tables.
+> NOTE  
+No `DML` is allowed on external tables.  
+Find more information [here.](https://msdn.microsoft.com/en-us/library/mt631610.aspx)
+
+Support for HIVE is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
+
+
+##### Insert Into Select
+
+Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-InsertingdataintoHiveTablesfromqueries) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms174335.aspx)  
+
+
+##### Rollup, Cube, Grouping Sets
+Supported in [T-SQL](https://technet.microsoft.com/en-us/library/bb522495(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Enhanced+Aggregation,+Cube,+Grouping+and+Rollup)
+
+##### Common Table Expressions (Queries specified in a WITH clause)
+Supported in [T-SQL](https://technet.microsoft.com/en-us/library/ms190766(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Common+Table+Expression)
+
+
+##### User Defined Functions (UDF)  
+Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+UDF) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms191320.aspx) with certain ceveats.  
+
+
+**NOTE**
+> ##### Hive For SQL Users  
+> For customers that are already know SQL, [Horton Works](http://hortonworks.com/) has created a handy Hive
+["Cheat Sheet"](http://hortonworks.com/blog/hive-cheat-sheet-for-sql-users/) for SQL users.
+It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.  
+
+
+> For further readings, these external links could be interesting.
+
+> 1. [Subtle differences between HiveQL and SQL](http://www.wmanalytics.io/blog/list-subtle-differences-between-hiveql-and-sql) by WebMasson Analytics.
+
+> 2. [Difference Between SQL and T-SQL](http://www.differencebetween.net/technology/software-technology/difference-between-sql-and-t-sql/) by www.diferencebetween.net
