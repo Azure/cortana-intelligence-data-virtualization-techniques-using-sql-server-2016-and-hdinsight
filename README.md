@@ -77,7 +77,7 @@ We assume the following prerequisites are fulfilled -
 
 1. [Use Case 2 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
 
-1. [Troubleshooting](#troubleshooting)
+1. [Troubleshooting](Troubleshooting.md)
 
 1. [Appendix](Appendix.md)
 
