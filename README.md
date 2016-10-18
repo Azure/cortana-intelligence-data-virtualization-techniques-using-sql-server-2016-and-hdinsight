@@ -417,7 +417,8 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
 
 ##### Reinstall PolyBase 
-PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polyBase-service-in-deployed-sql-server-2016).
+PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
+
 ###### Mount the  AdventureWorks Databases
 It is possible when you log on to the virtual machine, the databases will be in **"Recovery Pending"** mode.
 ![Databases in Recovery State](./assets/media/DB-RECOVERY1.PNG "Databases in Recovery State")
