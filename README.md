@@ -79,7 +79,7 @@ We assume the following prerequisites are fulfilled -
 
 1. [Troubleshooting](#troubleshooting)
 
-1. [Appendix](#appendix)
+1. [Appendix](Appendix.md)
 
 
 ## Hybrid OnPrem SQLServer16 To Cloud Data Virtualization Using PolyBase
@@ -148,6 +148,15 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 1. Product table from AdventureWorks2012.
 
 **Essential House keeping**  
+
+- From Azure portal, get the connection details of the deployed SQL Server 2016.  
+
+- Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
+
+- On the virtual machine, open **SQL Server Management Studio (SSMS).**  
+
+- For authenticating to the SQL instance, use **Windows Authentication**.
+
 > From SSMS, you may encounter the following error message while trying to export your tables.
 >
 >  
@@ -185,14 +194,14 @@ SELECT    d.name, d.compatibility_level
     FROM  sys.databases AS d;
 ```
 
-Alter level if needed, for my case I chose 130.
+Alter level if needed to 120.
 
 ```
 SELECT ServerProperty('ProductVersion');  
 go  
 
 ALTER DATABASE your_database_name  
-    SET COMPATIBILITY_LEVEL = 130;  
+    SET COMPATIBILITY_LEVEL = 120;  
 go  
 
 SELECT    d.name, d.compatibility_level  
@@ -473,7 +482,7 @@ A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.
 It is possible when you log on to the virtual machine, the databases will be in **"Recovery Pending"** mode.
 ![Databases in Recovery State](./assets/media/DB-RECOVERY1.PNG "Databases in Recovery State")
 
-To fix this, navigate to **C:\LOG**, delete all the old logs and restart MSSQLSERVER service.
+To fix this, navigate to **E:\LOG**, delete all the old logs and restart MSSQLSERVER service.
 
 ###### Install HDP Hadoop Sandbox
 1. Login on to [Azure Portal](https://portal.azure.com)  
@@ -650,6 +659,15 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 1. AdventureWorks2012.
 
 **Essential House keeping**  
+
+- From Azure portal, get the connection details of the deployed SQL Server 2016.  
+
+- Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
+
+- On the virtual machine, open **SQL Server Management Studio (SSMS).**  
+
+- For authenticating to the SQL instance, use **Windows Authentication**.
+
 > From SSMS, you may encounter the following error message while trying to export your tables.
 >
 >  
@@ -701,14 +719,14 @@ SELECT    d.name, d.compatibility_level
     FROM  sys.databases AS d;
 ```
 
-Alter level if needed, for my case I chose 130.
+Alter level if needed to 120.
 
 ```
 SELECT ServerProperty('ProductVersion');  
 go  
 
 ALTER DATABASE your_database_name  
-    SET COMPATIBILITY_LEVEL = 130;  
+    SET COMPATIBILITY_LEVEL = 120;  
 go  
 
 SELECT    d.name, d.compatibility_level  
@@ -1235,7 +1253,7 @@ You can view the data in `dwHistoricalSales` by a call to action `.show`. This w
 
   > IMPORTANT NOTE  
   > Let us assume that another ETL runs in cloud and produces NoSQL Product data into ADLS. The final ETL may need a hybrid scenario that combines historical sales data from SQL Data Warehouse and NoSQL Product data on ADLS.  
-  
+
   - Copy sample data to ADLS Upload [this](./assets/data/DimProduct.json) sample data (**DimProduct** table in JSON format) to ADLS by following instructions from [here!](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#uploaddata)
 
   ```
@@ -1388,113 +1406,3 @@ You can view the data in `dwHistoricalSales` by a call to action `.show`. This w
 	**FIX**  
 	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`  
 
-## Appendix  
-
-### Some TSQL HiveQL and ANSI SQL syntax intersections
-
-##### Renaming a table
-Supported on both T-SQL and HIVE with slight differences.
-- [T-SQL](https://msdn.microsoft.com/en-us/library/mt631611.aspx)
-	- SQL DW/PDW
-
-    ```  
-	RENAME OBJECT [ :: ]  [ [ database_name .  [schema_name ] ] . ] | [schema_name . ] ] table_name TO new_table_name [;]  
-
-    ```
-
-    - SQL Server and DB : Use Stored Procedure [sp_renamedb](https://msdn.microsoft.com/en-us/library/ms186217.aspx)
-
-    ```
-    sp_renamedb [ @dbname = ] 'old_name' , [ @newname = ] 'new_name'  
-
-    ```
-
-- [HIVE](http://www.tutorialspoint.com/hive/hive_alter_table.htm)
-
-```
-ALTER TABLE name RENAME TO new_name
-```
-
-##### Cloning Table schema without copying data (Create Table Like - CTL)
-Supported directly on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableLike) alone.
-
-```
-CREATE TABLE newEmptyTableWithSchema LIKE realTableWeNeedSchemaFrom;
-```
-
-However, you can achieve a similar result in T-SQL using a `SELECT INTO` statement
-
-```
- SELECT TOP 0 * INTO newEmptyTableWithSchema FROM realTableWeNeedSchemaFrom;
-```
-
-
-##### Creating External Tables
-Supported on [HIVE](http://www.tutorialspoint.com/hive/hive_create_table.htm) and [T-SQL with PolyBase alone](https://msdn.microsoft.com/en-us/library/mt163689.aspx) on SQL Server 16 and Data Warehouse (SQL and Parallel).  
-
-
-##### Creating Table As Select (CTAS)
-Supported on [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTableAsSelect(CTAS)) and T-SQL for [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt204041.aspx)
-
-##### Creating External Table As Select (CETAS)
-Supported in T-SQL (with PolyBase) on [Azure SQL DW and Parallel DW](https://msdn.microsoft.com/en-us/library/mt631610.aspx) but **NOT** supported in HIVE.    
-
-Hive supports only **CTAS** with the following ceveats **FULLY** documented on [Apache Hive Confluence Page](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL)  
-
-> CTAS has these restrictions:  
-The target table cannot be a partitioned table.  
-_**The target table cannot be an external table.**_   
-The target table cannot be a list bucketing table.
-
-
-##### Update
-Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms177523.aspx) for internal tables.
-
-> NOTE  
-`UPDATE` is not supported on external tables. Only the following are allowed on external tables.  
-- CREATE and DROP TABLE  
-- CREATE AND DROP STATISTICS  
-- CREATE AND DROP VIEW  
-
->For further information check [Limitations and Restrictions of T-SQL Create External Table](https://msdn.microsoft.com/en-us/library/dn935021.aspx)
-
-Support for [HIVE] is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
-
-
-##### Delete
-Supported on [T-SQL](https://msdn.microsoft.com/en-us/library/ms189835.aspx) for internal tables.
-> NOTE  
-No `DML` is allowed on external tables.  
-Find more information [here.](https://msdn.microsoft.com/en-us/library/mt631610.aspx)
-
-Support for HIVE is available from [version 0.14](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-Update) on tables that support ACID properties.
-
-
-##### Insert Into Select
-
-Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DML#LanguageManualDML-InsertingdataintoHiveTablesfromqueries) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms174335.aspx)  
-
-
-##### Rollup, Cube, Grouping Sets
-Supported in [T-SQL](https://technet.microsoft.com/en-us/library/bb522495(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Enhanced+Aggregation,+Cube,+Grouping+and+Rollup)
-
-##### Common Table Expressions (Queries specified in a WITH clause)
-Supported in [T-SQL](https://technet.microsoft.com/en-us/library/ms190766(v=sql.105).aspx) and [HIVE](https://cwiki.apache.org/confluence/display/Hive/Common+Table+Expression)
-
-
-##### User Defined Functions (UDF)  
-Supported in [HIVE](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+UDF) and [T-SQL](https://msdn.microsoft.com/en-us/library/ms191320.aspx) with certain ceveats.  
-
-
-**NOTE**
-> ##### Hive For SQL Users  
-> For customers that are already know SQL, [Horton Works](http://hortonworks.com/) has created a handy Hive
-["Cheat Sheet"](http://hortonworks.com/blog/hive-cheat-sheet-for-sql-users/) for SQL users.
-It'll be a very useful tool to assist your translation of SQL logic to Hive on HDInsight.  
-
-
-> For further readings, these external links could be interesting.
-
-> 1. [Subtle differences between HiveQL and SQL](http://www.wmanalytics.io/blog/list-subtle-differences-between-hiveql-and-sql) by WebMasson Analytics.
-
-> 2. [Difference Between SQL and T-SQL](http://www.differencebetween.net/technology/software-technology/difference-between-sql-and-t-sql/) by www.diferencebetween.net
