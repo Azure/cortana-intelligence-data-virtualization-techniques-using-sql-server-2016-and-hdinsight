@@ -176,7 +176,7 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 ```
 sp_configure 'allow polybase export', 1;
 RECONFIGURE;
-GO	
+GO
 ```
 
 - Confirm legacy compability estimation is turned off.  
@@ -415,12 +415,12 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 1. One SQL Server 2016 with PolyBase support (IAAS)  
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1b_new.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1b.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 ##### Extra manual deploy:
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
 
-##### Reinstall PolyBase 
+##### Reinstall PolyBase
 PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
 
 ###### Mount the  AdventureWorks Databases
@@ -630,7 +630,7 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 ```
 sp_configure 'allow polybase export', 1;
 RECONFIGURE;
-GO	
+GO
 ```
 
 - Allow PolyBase to connect to Hadoop
@@ -1266,5 +1266,3 @@ You can view the data in `dwHistoricalSales` by a call to action `.show`. This w
   ```  
 
   The results from this pattern can be used in other pipelines or exported for visualization in tools like Power BI.
-
-
