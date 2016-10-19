@@ -411,7 +411,7 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 1. One SQL Server 2016 with PolyBase support (IAAS)  
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1b.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1b_new.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 ##### Extra manual deploy:
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
