@@ -141,8 +141,12 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 1. A four node HDInsight cluster - _two head nodes and two worker nodes_.
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1a.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
+#### Extra manual deploy:
+- **Reinstall PolyBase**  
+
+	PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
 
 #### Data Source
 1. Product table from AdventureWorks2012.
@@ -172,7 +176,7 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 ```
 sp_configure 'allow polybase export', 1;
 RECONFIGURE;
-GO	;
+GO	
 ```
 
 - Confirm legacy compability estimation is turned off.  
@@ -198,16 +202,16 @@ Alter level if needed to 120.
 
 ```
 SELECT ServerProperty('ProductVersion');  
-go  
+GO  
 
 ALTER DATABASE your_database_name  
     SET COMPATIBILITY_LEVEL = 120;  
-go  
+GO  
 
 SELECT    d.name, d.compatibility_level  
     FROM  sys.databases AS d  
     WHERE d.name = 'your_database_name';  
-go  
+GO  
 
 ```
 
@@ -215,7 +219,7 @@ Outputs
 
 | name          | compability_level
 | ------------- |:-------------:|
-| `your_database_name`| 130 |
+| `your_database_name`| 120 |
 
 
 At this point, our SQL Server 2016 is ready to support PolyBase transactions.
@@ -626,7 +630,7 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 ```
 sp_configure 'allow polybase export', 1;
 RECONFIGURE;
-GO	;
+GO	
 ```
 
 - Allow PolyBase to connect to Hadoop
@@ -637,7 +641,7 @@ GO	;
 
 sp_configure @configname = 'hadoop connectivity', @configvalue = 7;   
 RECONFIGURE ;  
-GO   ;
+GO   
 ```
 
 - Confirm legacy compability estimation is turned off.  
@@ -664,16 +668,16 @@ Alter level if needed to 120.
 
 ```
 SELECT ServerProperty('ProductVersion');  
-go  
+GO  
 
 ALTER DATABASE your_database_name  
     SET COMPATIBILITY_LEVEL = 120;  
-go  
+GO  
 
 SELECT    d.name, d.compatibility_level  
     FROM  sys.databases AS d  
     WHERE d.name = 'your_database_name';  
-go  
+GO  
 
 ```
 
@@ -681,7 +685,7 @@ Outputs
 
 | name          | compability_level
 | ------------- |:-------------:|
-| `your_database_name`| 130 |
+| `your_database_name`| 120 |
 
 
 At this point, our SQL Server 2016 is ready to support PolyBase transactions.

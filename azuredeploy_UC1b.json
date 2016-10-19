@@ -134,27 +134,27 @@
                 "storageProfile": {
                     "osDisk": {
                         "osType": "[variables('pbvm-os-type')]",
-                        "name": "DVPBVM-osDisk.f983a0a0-e354-4859-8e26-79a3f9f0c13c.vhd",
+                        "name": "DVGenVM-osDisk.0dc1636e-2ee8-450a-9b5b-9edb7afe62e8.vhd",
                         "createOption": "FromImage",
                         "image": {
-                            "uri": "https://bostonvmimages.blob.core.windows.net/system/Microsoft.Compute/Images/images/DVPBVM-osDisk.f983a0a0-e354-4859-8e26-79a3f9f0c13c.vhd"
+                            "uri": "https://bostonvmimages.blob.core.windows.net/system/Microsoft.Compute/Images/generalized/DVGenVM-osDisk.0dc1636e-2ee8-450a-9b5b-9edb7afe62e8.vhd"
                         },
                         "vhd": {
-                            "uri": "[concat('https://bostonvmimages.blob.core.windows.net/newvmcontainer-', parameters('unique-id'), '/osDisk.f983a0a0-e354-4859-8e26-79a3f9f0c13c.vhd')]"
+                            "uri": "[concat('https://bostonvmimages.blob.core.windows.net/newvmcontainer-', parameters('unique-id'), '/osDisk.0dc1636e-2ee8-450a-9b5b-9edb7afe62e8.vhd')]"
                         },
                         "caching": "ReadWrite"
                     },
                     "dataDisks": [
                         {
                             "lun": 0,
-                            "name": "DVPBVM-dataDisk-0.f983a0a0-e354-4859-8e26-79a3f9f0c13c.vhd",
+                            "name": "DVGenVM-dataDisk-0.0dc1636e-2ee8-450a-9b5b-9edb7afe62e8.vhd",
                             "diskSizeGB": "[variables('pbvm-size-of-data-disk')]",
                             "createOption": "FromImage",
                             "image": {
-                                "uri": "https://bostonvmimages.blob.core.windows.net/system/Microsoft.Compute/Images/images/DVPBVM-dataDisk-0.f983a0a0-e354-4859-8e26-79a3f9f0c13c.vhd"
+                                 "uri": "https://bostonvmimages.blob.core.windows.net/system/Microsoft.Compute/Images/generalized/DVGenVM-dataDisk-0.0dc1636e-2ee8-450a-9b5b-9edb7afe62e8.vhd"
                             },
                             "vhd": {
-                                "uri": "[concat('https://bostonvmimages.blob.core.windows.net/newvmcontainer-', parameters('unique-id'), '/dataDisk-0.f983a0a0-e354-4859-8e26-79a3f9f0c13c.vhd')]"
+                                "uri": "[concat('https://bostonvmimages.blob.core.windows.net/newvmcontainer-', parameters('unique-id'), '/dataDisk-0.0dc1636e-2ee8-450a-9b5b-9edb7afe62e8.vhd')]"
                             },
                             "caching": "ReadWrite"
                         }
