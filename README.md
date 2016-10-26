@@ -537,7 +537,7 @@ These tuning parameters can be made directly on the xml configuration files or m
 	Confirm settings update for the dependent services, highlighted by the blue rectangle, in diagram. These changes in the **Recommended Value** Column are auto adjusted and optimized based on memory allocations for the MapReduce2 Framework. They are **recommended and not enforced**. Easily uncheck the box to avoid updating it and keeping the current value. Click **OK** to save.
 	![Confirm Dependent Service Update ](./assets/media/AMBARI-NEW-CONFIG-MGR9.PNG "Confirm dependent service updates")  
 
-	Restart MapReduce service after this modification to validate modifications. After restart, down and save the updated MapReduce configuration settings.
+	Restart MapReduce service after this modification to validate modifications. After restart, download and save the updated MapReduce configuration settings.
 	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR13.PNG "Download Client Configs")  
 
 ###### Set YARN configurations.
@@ -546,8 +546,8 @@ These tuning parameters can be made directly on the xml configuration files or m
 - Switch to the new **YARN** configuration group to make memory modifications.  
 	Set total memory allocations for all YARN containers on a node via UI.  
 
-	- Rectangle 1 sets `yarn.nodemanager.resource.memory-mb`
-	- Rectangle 2 sets `yarn.scheduler.minimum-allocation-mb`
+	- Rectangle 1 sets `yarn.nodemanager.resource.memory-mb` to 22GB (this value depends on your optimization needs. Just remember to leave some physical memory for the VMs operating system).
+	- Rectangle 2 sets `yarn.scheduler.minimum-allocation-mb` to 2GB
 
 	![Configure YARN Memory Configs](./assets/media/AMBARI-NEW-CONFIG-MGR14.PNG "Configure YARN memory")  
 
