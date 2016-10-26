@@ -583,11 +583,12 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 - To persist configurations, overwrite the variables in the PolyBase configuration folder. That way PolyBase uses this as primary.
 	- Using your **RDP** application, log into the VM.  
 	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
-	- Back the following existing files  
+	- Backup the following existing files  
 		- hdfs-site.xml
 		- core-site.xml
-		- mapred-site.xml
-	- Copy over the downloaded/updated versions (from Ambari configuration modifications) to this folder.
+		- mapred-site.xml  
+		
+	- Copy over the downloaded/updated versions (from Ambari configuration modifications). On your local machine, unzip the following zip files.
 	-
 	- Restart SQL Server service.
 		![Select MSSQL Server Service](./assets/media/AMBARI-NEW-CONFIG-MGR17.PNG "Select MSSQL Server Service")  
