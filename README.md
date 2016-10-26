@@ -537,7 +537,7 @@ These tuning parameters can be made directly on the xml configuration files or m
 	Confirm settings update for the dependent services, highlighted by the blue rectangle, in diagram. These changes in the **Recommended Value** Column are auto adjusted and optimized based on memory allocations for the MapReduce2 Framework. They are **recommended and not enforced**. Easily uncheck the box to avoid updating it and keeping the current value. Click **OK** to save.
 	![Confirm Dependent Service Update ](./assets/media/AMBARI-NEW-CONFIG-MGR9.PNG "Confirm dependent service updates")  
 
-	Restart MapReduce service after this modification to validate modifications. 
+	Restart MapReduce service after this modification to validate modifications.
 	, download and save the updated MapReduce configuration settings.
 	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR13.PNG "Download Client Configs")  
 
@@ -556,15 +556,15 @@ These tuning parameters can be made directly on the xml configuration files or m
 - Update application and log deletion service timer.
 Click on **Advanced** tab besides **Settings**, expand the **Advanced yarn-site** and override the value of  **yarn.nodemanager.delete.debug-delay-sec** to **1200** (for 20 minutes debug/log files retention).  
 ![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR11.PNG "Download Client Configs")  
-Click the **Save** button and make a note of your update for versioning purposes. 
-	
+Click the **Save** button and make a note of your update for versioning purposes.
+
 **NOTE:**  
 After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  
 
 Restart YARN service after this modification to validate modifications. After restart, download and save the updated YARN configuration settings.
 ![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
 
-- 
+-
 
 > IMPORTANT NOTE  
 > It is very important to set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
@@ -584,12 +584,12 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 	- Using your **RDP** application, log into the VM.  
 	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
 	- Backup the following existing files  
-		- hdfs-site.xml
 		- core-site.xml
 		- mapred-site.xml  
-		
-	- Copy over the downloaded/updated versions (from Ambari configuration modifications). On your local machine, unzip the following zip files.
-	-
+	- Copy over the downloaded/updated versions (from Ambari configuration modifications). On your local machine, unzip the following zip files MAPREDUCE2_CLIENT-configs.tar.gz and YARN_CLIENT-configs.tar.gz.  
+	Drill down to **YARN_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\YARN_CLIENT-configs** and **MAPREDUCE2_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\MAPREDUCE2_CLIENT-configs**.  
+	Copy the mapred-site.xml from the MAPREDUCE2_CLIENT-configs, and replace the mapred-site.xml on the VM with it. Do the same thing for core-site.xml and yarn-site.xml from YARN_CLIENT-configs.  
+	
 	- Restart SQL Server service.
 		![Select MSSQL Server Service](./assets/media/AMBARI-NEW-CONFIG-MGR17.PNG "Select MSSQL Server Service")  
 
