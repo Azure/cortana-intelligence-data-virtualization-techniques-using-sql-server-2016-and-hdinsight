@@ -546,30 +546,25 @@ These tuning parameters can be made directly on the xml configuration files or m
 - Switch to the new **YARN** configuration group to make memory modifications.  
 	Set total memory allocations for all YARN containers on a node via UI.  
 
-	- Rectangle 1 sets `yarn.nodemanager.resource.memory-mb` to 22GB (this value depends on your optimization needs. Just remember to leave some physical memory for the VMs operating system).
-	- Rectangle 2 sets `yarn.scheduler.minimum-allocation-mb` to 2GB
+	- Rectangle 1 sets `yarn.nodemanager.resource.memory-mb` to 21248MB (this value depends on your optimization needs. Just remember to leave some physical memory for the VMs operating system).
+	- Rectangle 2 sets `yarn.scheduler.minimum-allocation-mb` to 2048MB
+	- Rectangle 3 adjusts itself automatically based on the value from `yarn.nodemanager.resource.memory-mb`.
 
 	![Configure YARN Memory Configs](./assets/media/AMBARI-NEW-CONFIG-MGR14.PNG "Configure YARN memory")  
 
-	> IMPORTANT NOTE  
-	> CPU related settings can be modified also via the UI  
-	>  
-	> - Number of virtual cores.  
-	> - Minimum and maximum virtual cores sizes  
-	> - Percentage of physical CPU for all containers on the node.  
-	>
-	> The current values perform well. No modifications done for this tutorial.  
-	>
-	> ![CPU related settings](./assets/media/AMBARI-NEW-CONFIG-MGR15.PNG "CPU related settings")
-
 - Update application and log deletion service timer.
-	After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  
-	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
+Click on **Advanced** tab besides **Settings**, expand the **Advanced yarn-site** and override the value of  **yarn.nodemanager.delete.debug-delay-sec** to **3600** (for an hour log files retention).  
+![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR11.PNG "Download Client Configs")  
+Click the **Save** button and make a note of your update for versioning purposes. 
+	
+**NOTE:**  
+After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  	
 
 - Download modified client config.  
-Restart YARN service after this modification to validate modifications. After restart, down and save the updated YARN configuration settings.
+Restart YARN service after this modification to validate modifications. After restart, download and save the updated YARN configuration settings.
 ![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
 
+- 
 
 > IMPORTANT NOTE  
 > It is very important to set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
