@@ -537,7 +537,8 @@ These tuning parameters can be made directly on the xml configuration files or m
 	Confirm settings update for the dependent services, highlighted by the blue rectangle, in diagram. These changes in the **Recommended Value** Column are auto adjusted and optimized based on memory allocations for the MapReduce2 Framework. They are **recommended and not enforced**. Easily uncheck the box to avoid updating it and keeping the current value. Click **OK** to save.
 	![Confirm Dependent Service Update ](./assets/media/AMBARI-NEW-CONFIG-MGR9.PNG "Confirm dependent service updates")  
 
-	Restart MapReduce service after this modification to validate modifications. After restart, download and save the updated MapReduce configuration settings.
+	Restart MapReduce service after this modification to validate modifications. 
+	, download and save the updated MapReduce configuration settings.
 	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR13.PNG "Download Client Configs")  
 
 ###### Set YARN configurations.
@@ -553,14 +554,13 @@ These tuning parameters can be made directly on the xml configuration files or m
 	![Configure YARN Memory Configs](./assets/media/AMBARI-NEW-CONFIG-MGR14.PNG "Configure YARN memory")  
 
 - Update application and log deletion service timer.
-Click on **Advanced** tab besides **Settings**, expand the **Advanced yarn-site** and override the value of  **yarn.nodemanager.delete.debug-delay-sec** to **3600** (for an hour log files retention).  
+Click on **Advanced** tab besides **Settings**, expand the **Advanced yarn-site** and override the value of  **yarn.nodemanager.delete.debug-delay-sec** to **1200** (for 20 minutes debug/log files retention).  
 ![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR11.PNG "Download Client Configs")  
 Click the **Save** button and make a note of your update for versioning purposes. 
 	
 **NOTE:**  
-After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  	
+After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  
 
-- Download modified client config.  
 Restart YARN service after this modification to validate modifications. After restart, download and save the updated YARN configuration settings.
 ![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
 
@@ -569,7 +569,7 @@ Restart YARN service after this modification to validate modifications. After re
 > IMPORTANT NOTE  
 > It is very important to set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
 >
-> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services. Therefore we will copy over the downloaded configurations to
+> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services. Therefore we will copy over the downloaded configurations to **C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf**. Remember to backup the existing files.
 
 #### Override PolyBase's Hadoop configurations with updated files.  
 Unzip the downloaded config files. The MapReduce zip folder has the files of relevance (core-site.xml, mapred-site.xml, hdfs-site.xml)
@@ -581,6 +581,7 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 1. Configurations set on the VM.
 
 - To persist configurations, overwrite the variables in the PolyBase configuration folder. That way PolyBase uses this as primary.
+	- Using your **RDP** application, log into the VM.  
 	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
 	- Back the following existing files  
 		- hdfs-site.xml
