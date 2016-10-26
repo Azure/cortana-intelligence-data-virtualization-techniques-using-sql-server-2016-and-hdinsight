@@ -474,7 +474,7 @@ via the following steps:
 
 1. Finally run command  
 `ambari-agent restart`
-1. Point browser to `http://<hostname/ipaddress>:8088`  
+1. Point browser to `http://<hostname/ipaddress>:8080`  
 	- Enter the user "admin" and put the password you set up (via ssh on VM)
 
 
@@ -589,7 +589,7 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 	- Copy over the downloaded/updated versions (from Ambari configuration modifications). On your local machine, unzip the following zip files MAPREDUCE2_CLIENT-configs.tar.gz and YARN_CLIENT-configs.tar.gz.  
 	Drill down to **YARN_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\YARN_CLIENT-configs** and **MAPREDUCE2_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\MAPREDUCE2_CLIENT-configs**.  
 	Copy the mapred-site.xml from the MAPREDUCE2_CLIENT-configs, and replace the mapred-site.xml on the VM with it. Do the same thing for core-site.xml and yarn-site.xml from YARN_CLIENT-configs.  
-	
+
 	- Restart SQL Server service.
 		![Select MSSQL Server Service](./assets/media/AMBARI-NEW-CONFIG-MGR17.PNG "Select MSSQL Server Service")  
 
@@ -713,7 +713,7 @@ Connect to the AdventureWorks2012 database pre-loaded on the earlier created SQL
 
 **LINKS**  - You can interact with SQL Server 2016 via [Visual Studio](https://www.visualstudio.com/) or [Microsoft SQL Server Management Studio](https://msdn.microsoft.com/en-us/library/mt238290.aspx).  
 
-- Create a master key on the database.  
+- Create a master key on the AdventureWorks2012 database.  
 This step is very important to encrypt the credential secret during network I/O transmission.
 
 ```
@@ -731,11 +731,10 @@ CREATE DATABASE SCOPED CREDENTIAL HadoopStorageCredential
 WITH IDENTITY = '<your_hadoop_user>', Secret = '<hadoop_user_password>';
 ```
 
-- Create your external data source.
-
+- Create your external data source.  
 *Parameters:*  
-    - **LOCATION:**  Hadoop NameNode IP address and port. (8020 for HDP 2.X)   
-    - **RESOURCE MANAGER LOCATION (Optional):** Hadoop Resource Manager location to enable pushdown computation. (Use port 8050 for HDP 2.X)  
+	- **LOCATION:**  Hadoop NameNode Private IP address and port. (8020 for HDP 2.X). Get this information from Azure Portal.
+    - **RESOURCE MANAGER LOCATION ** Hadoop Resource Manager location to enable pushdown computation. (Use port 8050 for HDP 2.X)  
     - **CREDENTIAL:** The database scoped credential we created earlier.
 
 ```
