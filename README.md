@@ -420,163 +420,24 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 ##### Extra manual deploy:
 The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
 
-##### Reinstall PolyBase
+1. Reinstall PolyBase
 PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
 
-###### Mount the  AdventureWorks Databases
-It is possible when you log on to the virtual machine, the databases will be in **"Recovery Pending"** mode.
-![Databases in Recovery State](./assets/media/DB-RECOVERY1.PNG "Databases in Recovery State")
+2. Hadoop Cluster:  
+This tutorial is written and tested with HortonWorks Hadoop. It assumes you have an already existing Hortonworks Hadoop cluster. Otherwise please find instructions on how to install a single node
+HortonWorks cluster [here](HDP_Singlenode_Installation.md).
 
-To fix this, navigate to **E:\LOG**, delete all the old logs and restart MSSQLSERVER service.
-
-###### Install HDP Hadoop Sandbox
-1. Login on to [Azure Portal](https://portal.azure.com)  
-
-1. Navigate to Azure Market Place and search for **"Hadoop"**. Select the HortonWorks Sandbox.  
-![Azure Market Resource Search Page](./assets/media/PORTAL-PAGE.PNG "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")
-
-1.  Select Resource Manager as the deployment model.
-![Select Resource Manager Deployment](./assets/media/SELECT-HDP.PNG "Resource Manager Deployment")  
-
-1.  Set Sandbox basic settings.
-![Set Hadoop Basic Settings](./assets/media/SELECT-HDP-2.PNG "Basic Settings")
-
-1.	Choose virtual machine Size.  
-Available machines depend on your subscription. More cores and RAM gives better performance.   
-![Set VM Size](./assets/media/SELECT-HDP-4.PNG "VM Size")
-
-1. Set other features like network and storage.
-![Set other features](./assets/media/SELECT-HDP-5.PNG "VM Size")
-
-	> **IMPORTANT NOTE:**  
-	>
-	>it is advised to add this machine to the same Virtual Network as your SQL Server 2016 (IAAS). As both systems need visibility, this step makes connectivity easier between systems.
-
-1. Validate your configuration.  
-Make sure it passes successfully before continuing.
-![Set other features](./assets/media/SELECT-HDP-6.PNG "VM Size")
-
-1. Read EULA and purchase.  
-Make sure it passes successfully before continuing.
-![Set other features](./assets/media/SELECT-HDP-7.PNG "VM Size")
-
-#### Manage HDP VM via Ambari Views
-
-##### Activate access to Ambari  
-By default Ambari WebUI is not activated on the HDP VM. A manual step is required.  
-
-Activate the Ambari portal as an admin
-via the following steps:  
-
-1. ssh into the VM and run the following command as the root user  
-`ambari-admin-password-reset`
-1. When prompted enter a password. This action restarts Ambari server.  
-
-1. Finally run command  
-`ambari-agent restart`
-1. Point browser to `http://<hostname/ipaddress>:8080`  
-	- Enter the user "admin" and put the password you set up (via ssh on VM)
-
-
-
-
-##### Hadoop configuration and tuning used for HDP Hadoop VM  
-
->**IMPORTANT NOTE**
->  
-> Changes have been made between MapReduce and MapReduce2. In MapReduce2 running on HDP (2.X), resource management can now be reused between engines. MapReduce can now focus completely on data processing while Resource Manager and YARN provides a user the ability to run multiple applications in Hadoop that share the same resources.  
-
-###### Essential information and flags to set in configurations.
-- On yarn-site.xml  
-	- **yarn.nodemanager.resource.memory-mb** : Total amount of memory given to the Resource Manager.
-	- **yarn.scheduler.minimum-allocation-mb** : Minimum RAM yarn allocates containers.
-	- **yarn.nodemanager.vmem-pmem-ratio** : Memory allocations for Map tasks – Virtual memory upper limit.  
-	- **yarn.nodemanager.resource.cpu-vcores** : Number of virtual cores allocated. Best practice is to have 1 or 2 containers per disk per core.
-	- **yarn.nodemanager.delete.debug-delay-sec** : For diagnosing YARN application problems. It's the number of seconds after application execution for nodemanager's deletion service to clean up the localized file and log directories. A value of 600 means 10 minutes.
-
-
-- On mapred-site.xml
-	- **mapreduce.map.memory.mb** : Memory size for Map tasks.
-	- **mapreduce.reduce.memory.mb** : Memory size for Reduce tasks. Should be twice Map size.
-	- **mapreduce.map.java.opts** : Upper limit of the physical RAM for Map task JVM.
-	- **mapreduce.reduce.java.opts** : Upper limit of the physical RAM for Reduce task JVM.
-
-These tuning parameters can be made directly on the xml configuration files or managed via Ambari. We will use Ambari to make these configurations, save the updated files and copy them over to the Hadoop directory under PolyBase installation.
-
-
-###### Set MapReduce2 configurations.
-- Login to Ambari view with **_admin_** as username and the password you created via ssh.
-![Ambari Login Form](./assets/media/AMBARI-LOGIN.PNG "Login")  
-
-- Begin tuning of MapReduce2 service memory settings.
-![Ambari Configs](./assets/media/AMBARI-CONFIG.PNG "Configurations")   
-
-	Create a new Configuration Group (**TestGroup** in this case). Default group is not allowed to be modified.
-	![Setting New Configuration Manager](./assets/media/AMBARI-NEW-CONFIG-MGR2.PNG "New Config Manager")
-
-	Click on `Manage Hosts` to attach our VM to this new Configuration Group.  
-	![Manage Hosts](./assets/media/AMBARI-NEW-CONFIG-MGR3.PNG "Manage Hosts")
-
-	Attach VM to Configuration Group.
-	![Attach Hosts](./assets/media/AMBARI-NEW-CONFIG-MGR4.PNG "Attach Hosts")
-
-	![Host with IP](./assets/media/AMBARI-NEW-CONFIG-MGR5.PNG "Attach Hosts on the IP")  
-
-	Make memory modifications in new group.
-	![Change to new group](./assets/media/AMBARI-NEW-CONFIG-MGR6.PNG "Change to new Group")   
-
-	Override memory settings by clicking on the **Override** symbol.
-		![Override Settings](./assets/media/AMBARI-NEW-CONFIG-MGR12.PNG "Override Settings")  
-
-	Increase the map and reduce memory. In this scenario for a 28GB Ram and 2 Core machine, set the Map Memory to 4GB (4098MB) and Reduce Memory as 8GB (8192MB). Sort Allocation Memory adjusts by default to half the size of the Map Memory.  Save configuration changes.
-	> NOTE
-	> The rectangles in blue alert you that there are other dependent services that need to be adjusted with memory updates for MapReduce Framework.    
-
-	![Change to MapReduce Framework ](./assets/media/AMBARI-NEW-CONFIG-MGR8.PNG "Change to new Group")  
-
-	Confirm settings update for the dependent services, highlighted by the blue rectangle, in diagram. These changes in the **Recommended Value** Column are auto adjusted and optimized based on memory allocations for the MapReduce2 Framework. They are **recommended and not enforced**. Easily uncheck the box to avoid updating it and keeping the current value. Click **OK** to save.
-	![Confirm Dependent Service Update ](./assets/media/AMBARI-NEW-CONFIG-MGR9.PNG "Confirm dependent service updates")  
-
-	Restart MapReduce service after this modification to validate modifications.
-	, download and save the updated MapReduce configuration settings.
-	![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR13.PNG "Download Client Configs")  
-
-###### Set YARN configurations.
-- Follow the same steps for MapReduce2 to create a new configuration group.
-
-- Switch to the new **YARN** configuration group to make memory modifications.  
-	Set total memory allocations for all YARN containers on a node via UI.  
-
-	- Rectangle 1 sets `yarn.nodemanager.resource.memory-mb` to 21248MB (this value depends on your optimization needs. Just remember to leave some physical memory for the VMs operating system).
-	- Rectangle 2 sets `yarn.scheduler.minimum-allocation-mb` to 2048MB
-	- Rectangle 3 adjusts itself automatically based on the value from `yarn.nodemanager.resource.memory-mb`.
-
-	![Configure YARN Memory Configs](./assets/media/AMBARI-NEW-CONFIG-MGR14.PNG "Configure YARN memory")  
-
-- Update application and log deletion service timer.
-Click on **Advanced** tab besides **Settings**, expand the **Advanced yarn-site** and override the value of  **yarn.nodemanager.delete.debug-delay-sec** to **1200** (for 20 minutes debug/log files retention).  
-![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR11.PNG "Download Client Configs")  
-Click the **Save** button and make a note of your update for versioning purposes.
-
-**NOTE:**  
-After application execution, the YARN deletion service kicks in to clean up cache, and temporary files created during the execution. The log files are also wiped. For diagnosing, we need to modify this value in Ambari.  
-
-Restart YARN service after this modification to validate modifications. After restart, download and save the updated YARN configuration settings.
-![Download Client Configs](./assets/media/AMBARI-NEW-CONFIG-MGR16.PNG "Download Client Configs")  
-
--
-
-> IMPORTANT NOTE  
-> It is very important to set these options in the yarn-site.xml and mapred-site.xml on the PolyBase version of these files.  
->
-> PolyBase’s Hadoop configuration should have pushdown specific values for mapred-site, hdfs-site, core-site, and yarn-site xml files as the may be overridden or conflict with the Ambari services. Therefore we will copy over the downloaded configurations to **C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf**. Remember to backup the existing files.
+3. Set the essential Hadoop MapReduce and YARN configurations
+For PolyBase connectivity, memory considerations need to be made for MapReduce and YARN.  Follow instructions
+[here](HDP_Singlenode_Installation.md#hadoop-configuration-and-tuning-used-for-hdp-hadoop-vm) to set the needed flags and then return to continue.
 
 #### Override PolyBase's Hadoop configurations with updated files.  
+After setting the MapReduce and YARN flags, we should have downloaded the MapReduce Client files to your local machine.  
 Unzip the downloaded config files. The MapReduce zip folder has the files of relevance (core-site.xml, mapred-site.xml, hdfs-site.xml)
 
 PolyBase to Hadoop connectivity uses the following configuration levels (in the order).  
 
-1.  Hadoop Configuration folder in PolyBase installation folder on SQL Server.
+1. Hadoop Configuration folder in PolyBase installation folder on SQL Server.
 1. Configurations set in Ambari  
 1. Configurations set on the VM.
 
@@ -584,11 +445,31 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 	- Using your **RDP** application, log into the VM.  
 	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
 	- Backup the following existing files  
-		- core-site.xml
-		- mapred-site.xml  
+		- `mapred-site.xml`  
 	- Copy over the downloaded/updated versions (from Ambari configuration modifications). On your local machine, unzip the following zip files MAPREDUCE2_CLIENT-configs.tar.gz and YARN_CLIENT-configs.tar.gz.  
-	Drill down to **YARN_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\YARN_CLIENT-configs** and **MAPREDUCE2_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\MAPREDUCE2_CLIENT-configs**.  
-	Copy the mapred-site.xml from the MAPREDUCE2_CLIENT-configs, and replace the mapred-site.xml on the VM with it. Do the same thing for core-site.xml and yarn-site.xml from YARN_CLIENT-configs.  
+	Drill down to **MAPREDUCE2_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\MAPREDUCE2_CLIENT-configs**.  
+	Copy the `mapred-site.xml` from the MAPREDUCE2_CLIENT-configs, and replace the mapred-site.xml on the VM with it.  
+
+	- Update `mapred-site.xml` for hdp.version, mapreduce split size and cross-platform (PolyBase on Windows to Hadoop possibly running on Linux).
+	Open the VM version of `mapred-site.xml` and add the following.  
+
+		```
+		<property>
+			<name>hdp.version</name>
+			<value>2.4.3.0-227</value>
+		</property>
+		<property>
+			<name>mapred.min.split.size</name>
+			<value>1073741824</value>
+		</property>
+		<property>
+			<name>mapreduce.app-submission.cross-platform</name>
+			<value>true</value>
+		</property>
+		```  
+
+		Find the current hdp version from the Linux HortonWorks VM by running `ls -la /usr/hdp/current/`. As at writing this, the current
+		version is **2.4.3.0-227**
 
 	- Restart SQL Server service.
 		![Select MSSQL Server Service](./assets/media/AMBARI-NEW-CONFIG-MGR17.PNG "Select MSSQL Server Service")  
@@ -970,8 +851,13 @@ $certStartDate = (Get-Date).Date
 $certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
 $certEndDate = $certStartDate.AddYears(1)
 $certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
-$certName = "HDI-ADLS-SPI"
-$certPassword = "new_password_here"
+```
+
+Give your certificate a unique name and set a password. And continue with the PowerShell commands below.  
+
+```
+$certName = "<hdi_adls_spi_name>"
+$certPassword = "<new_password_here>"
 $certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
 
 mkdir $certFolder
@@ -1032,8 +918,9 @@ On Windows PowerShell
 `$certPassword`
 
 
-###### Deploy Azure Data Lake Store from Portal
-Follow instructions on [Getting Started with Azure Data Lake Store](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#signup)  
+###### Deploy Azure Data Lake Store (ADLS) from Portal
+You need to upload sample data to ADLS. We have created a JSON file with the AdventureWorks Product data. Save a copy of this [file](https://raw.githubusercontent.com/Azure/cortana-intelligence-dw-advanced-hybrid-analytics/master/assets/data/DimProduct.json?token=ADBh7uifNK2EmVu8y7R5MaJ3RYjB_DM0ks5YG7JuwA%3D%3D) to your local machine and follow along the instructions on [Getting Started with Azure Data Lake Store](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#signup). However, upload the JSON Product data, you just downloaded, instead.
+
 
 ###### Deploy a Spark HDInsight Cluster with Azure Data Lake Store as secondary storage from Portal
 Using the SPI and Certificate created above, follow instructions to [Create an HDInsight cluster with Data Lake Store using Azure Portal](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-hdinsight-hadoop-use-portal/).  

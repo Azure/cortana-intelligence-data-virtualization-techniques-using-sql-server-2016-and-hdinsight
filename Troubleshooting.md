@@ -81,3 +81,16 @@
 	**FIX**  
 	- `sudo su hdfs -l -c 'hdfs dfsadmin -safemode leave'`  
 
+1. Mount the  AdventureWorks Databases  
+After logging in to the virtual machine, it's possible from SSMS that the databases may be in **"Recovery Pending"** mode.
+![Databases in Recovery State](./assets/media/DB-RECOVERY1.PNG "Databases in Recovery State")
+
+**FIX**
+- Deattach the affected databases from SSMS.
+
+- Navigate to **E:\LOG**, delete all the old logs and restart MSSQLSERVER service.
+
+- Reattach the databases.
+
+
+
