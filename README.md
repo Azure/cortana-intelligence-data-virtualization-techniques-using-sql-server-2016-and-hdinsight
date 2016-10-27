@@ -418,16 +418,16 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 <a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1b.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
 
 ##### Extra manual deploy:
-The following steps walks you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
+The following steps walk you through deploying an HDP Hadoop Sandbox (version 2.4 - current Azure market offering as at writing).
 
-1. Reinstall PolyBase
+1. Reinstall PolyBase:  
 PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
 
 2. Hadoop Cluster:  
 This tutorial is written and tested with HortonWorks Hadoop. It assumes you have an already existing Hortonworks Hadoop cluster. Otherwise please find instructions on how to install a single node
 HortonWorks cluster [here](HDP_Singlenode_Installation.md).
 
-3. Set the essential Hadoop MapReduce and YARN configurations
+3. Set the essential Hadoop MapReduce and YARN configurations:  
 For PolyBase connectivity, memory considerations need to be made for MapReduce and YARN.  Follow instructions
 [here](HDP_Singlenode_Installation.md#hadoop-configuration-and-tuning-used-for-hdp-hadoop-vm) to set the needed flags and then return to continue.
 
