@@ -124,7 +124,8 @@
             "name": "[variables('pbvm-name')]",
             "location": "[variables('deploy-location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/', variables('storage-account'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/', variables('storage-account'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces/', variables('pbvm-nic-name'))]"
             ],
             "apiVersion": "[variables('vm-version')]",
             "properties": {
