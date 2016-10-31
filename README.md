@@ -814,123 +814,33 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 - **Data Access:** Different users can interact with the ADLS using the same SPI. Hence the SPI needs access to your data.
 	- Data is read and written by the SPI.
 
-##### Create the Certificate and Service Principal Identity  
+If you have created a SPI and certificate before, it can be reused here, otherwise one can be created quickly and automatically during the HDInsight creation.
 
 
-###### Requirements
+#### Deploy a Spark HDInsight Cluster with Azure Data Lake Store as secondary storage from Portal
+The following will be covered in this part of the tutorial:  
 
-1. An Active [Azure](https://azure.microsoft.com/) subscription.  
-1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands.   
+1. Creating an Azure Data Lake Store.  
 
+1. Create a Service Principal Identity and Certificate.  
 
-If you have created a SPI and certificate before, feel free to jump to Step 4 below after Step 1, otherwise continue to create one quickly.  
-
-###### 1. Login in to Azure and Add Subscription.  
-
-- Open Windows PowerShell
-
-- Add Azure Subscription  
-
-	`Add-AzureRmAccount`  
-
-OR  
-
-- Login into Azure if you have previously added your Azure subscription.  
-
-	` Login-AzureRmAccount`
+1. Create an HDInsight Cluster in **R Server (Preview)** mode, for access to ADLS SDK support in Spark.
 
 
-###### 2. Create a PFX certificate
+The SPI and Certificate can be created using PowerShell Commands, instructions can be found [here](Appendix.md#create-the-certificate-and-service-principal-identity) or Azure Portal, which is our **RECOMMENDED** approach.
 
-On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
-
-```
-$certFolder = "C:\certificates"
-$certFilePath = "$certFolder\certFile.pfx"
-$certStartDate = (Get-Date).Date
-$certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
-$certEndDate = $certStartDate.AddYears(1)
-$certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
-```
-
-Give your certificate a unique name and set a password. And continue with the PowerShell commands below.  
-
-```
-$certName = "<hdi_adls_spi_name>"
-$certPassword = "<new_password_here>"
-$certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
-
-mkdir $certFolder
-
-$cert = New-SelfSignedCertificate -DnsName $certName -CertStoreLocation cert:\CurrentUser\My -KeySpec KeyExchange -NotAfter $certEndDate -NotBefore $certStartDate
-$certThumbprint = $cert.Thumbprint
-$cert = (Get-ChildItem -Path cert:\CurrentUser\My\$certThumbprint)
-
-Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswordSecureString
-
-```
-
-
-###### 3. Create the Service Principal Identity (SPI)  
-Using the earlier created certificate, create your SPI.
-
-```
-$clusterName = "your_new_hdi_cluster_name"
-$certificatePFX = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certFilePath, $certPasswordSecureString)
-$credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
-```
-
-Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
-```
-$application = New-AzureRmADApplication -DisplayName $certName -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
-```
-
-Use this cmdlet, if you installed Azure PowerShell 1.0
-```
-$application = New-AzureRmADApplication -DisplayName $certName `
-                        -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
-                        -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
-                        -StartDate $certStartDate -EndDate $certEndDate
-```
-
-Retrieve the Service Principal details
-```
-$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
-```
-
-###### 4. Retrieve SPI information needed for HDI deployment
-
-On Windows PowerShell
-
-- Application ID:  
-`$servicePrincipal.ApplicationId`
-
-- Object ID:  
-`$servicePrincipal.Id`
-
-- AAD Tenant ID:  
-`(Get-AzureRmContext).Tenant.TenantId`
-
-- Base-64 PFX file contents:  
-`[System.Convert]::ToBase64String((Get-Content $certFilePath -Encoding Byte))`
-
-- PFX password:  
-`$certPassword`
-
-
-###### Deploy Azure Data Lake Store (ADLS) from Portal
-You need to upload sample data to ADLS. We have created a JSON file with the AdventureWorks Product data. Save a copy of this [file](https://raw.githubusercontent.com/Azure/cortana-intelligence-dw-advanced-hybrid-analytics/master/assets/data/DimProduct.json?token=ADBh7uifNK2EmVu8y7R5MaJ3RYjB_DM0ks5YG7JuwA%3D%3D) to your local machine and follow along the instructions on [Getting Started with Azure Data Lake Store](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#signup). However, upload the JSON Product data, you just downloaded, instead.
-
-
-###### Deploy a Spark HDInsight Cluster with Azure Data Lake Store as secondary storage from Portal
-Using the SPI and Certificate created above, follow instructions to [Create an HDInsight cluster with Data Lake Store using Azure Portal](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-hdinsight-hadoop-use-portal/).  
 
 
 > IMPORTANT NOTE   
-**Create a Spark cluster instead of a Hadoop Cluster.**  
+> **Following the tutorial below walks you through how to create an Hadoop HDInsight cluster with ADLS support. Please select the R Server (Preview) version instead of Hadoop. This cluster will include all HDInsight applications like Hive, Hadoop, HBase, and Spark**  
+> During the cluster creation, under **CREDENTIALS**, make a new SPI and Certificate.  
 
-###### Manually load AdventureWorks sample data.  
-Follow link to load [Sample data into the deployed SQL Data Warehouse](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/)  .
+Follow instructions here on how to [Create an HDInsight cluster with Data Lake Store using Azure Portal](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-hdinsight-hadoop-use-portal/).  
+
+
+#### Manually load AdventureWorks sample data.  
+Follow link to load [Sample data into the deployed SQL Data Warehouse](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/).  
+
 
 
 #### Data Source

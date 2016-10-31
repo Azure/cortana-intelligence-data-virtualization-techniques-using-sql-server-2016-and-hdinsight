@@ -171,3 +171,106 @@ A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.
 
 	- Make sure that PolyBase services start automatically and are running normally; without affecting any SQL Service.
 		![Confirm PolyBase and MSSQLSERVER Services are running](./assets/media/POLYBASE-RESTART10.PNG "Confirm PolyBase and MSSQLSERVER Services are running.")  
+
+
+###### Create the Certificate and Service Principal Identity  
+
+
+1. Requirements
+	- An Active [Azure](https://azure.microsoft.com/) subscription.  
+	- Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands.   
+
+
+If you have created a SPI and certificate before, feel free to jump to Step 4 below after Step 1, otherwise continue to create one quickly.  
+
+###### 1. Login in to Azure and Add Subscription.  
+
+- Open Windows PowerShell
+
+- Add Azure Subscription  
+
+	`Add-AzureRmAccount`  
+
+OR  
+
+- Login into Azure if you have previously added your Azure subscription.  
+
+	` Login-AzureRmAccount`
+
+
+###### 2. Create a PFX certificate
+
+On your Microsoft Windows machine's PowerShell, run the following command to create your certificate.  
+
+```
+$certFolder = "C:\certificates"
+$certFilePath = "$certFolder\certFile.pfx"
+$certStartDate = (Get-Date).Date
+$certStartDateStr = $certStartDate.ToString("MM/dd/yyyy")
+$certEndDate = $certStartDate.AddYears(1)
+$certEndDateStr = $certEndDate.ToString("MM/dd/yyyy")
+```
+
+Give your certificate a unique name and set a password. And continue with the PowerShell commands below.  
+
+```
+$certName = "<hdi_adls_spi_name>"
+$certPassword = "<new_password_here>"
+$certPasswordSecureString = ConvertTo-SecureString $certPassword -AsPlainText -Force
+
+mkdir $certFolder
+
+$cert = New-SelfSignedCertificate -DnsName $certName -CertStoreLocation cert:\CurrentUser\My -KeySpec KeyExchange -NotAfter $certEndDate -NotBefore $certStartDate
+$certThumbprint = $cert.Thumbprint
+$cert = (Get-ChildItem -Path cert:\CurrentUser\My\$certThumbprint)
+
+Export-PfxCertificate -Cert $cert -FilePath $certFilePath -Password $certPasswordSecureString
+
+```
+
+
+###### 3. Create the Service Principal Identity (SPI)  
+Using the earlier created certificate, create your SPI.
+
+```
+$clusterName = "your_new_hdi_cluster_name"
+$certificatePFX = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certFilePath, $certPasswordSecureString)
+$credential = [System.Convert]::ToBase64String($certificatePFX.GetRawCertData())
+```
+
+Use this cmdlet, if you installed Azure PowerShell 2.0 (i.e After August 2016)
+```
+$application = New-AzureRmADApplication -DisplayName $certName -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  -CertValue $credential -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Use this cmdlet, if you installed Azure PowerShell 1.0
+```
+$application = New-AzureRmADApplication -DisplayName $certName `
+                        -HomePage "https://$clusterName.azurehdinsight.net" -IdentifierUris "https://$clusterName.azurehdinsight.net"  `
+                        -KeyValue $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify"  `
+                        -StartDate $certStartDate -EndDate $certEndDate
+```
+
+Retrieve the Service Principal details
+```
+$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
+```
+
+###### 4. Retrieve SPI information needed for HDI deployment
+
+On Windows PowerShell
+
+- Application ID:  
+`$servicePrincipal.ApplicationId`
+
+- Object ID:  
+`$servicePrincipal.Id`
+
+- AAD Tenant ID:  
+`(Get-AzureRmContext).Tenant.TenantId`
+
+- Base-64 PFX file contents:  
+`[System.Convert]::ToBase64String((Get-Content $certFilePath -Encoding Byte))`
+
+- PFX password:  
+`$certPassword`
