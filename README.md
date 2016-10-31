@@ -64,7 +64,7 @@ We assume the following prerequisites are fulfilled -
 ## High Level Use Case(s) Architecture
 1. Hybrid scenarios with On-Prem SQL Server 2016 and the following:
 	- Hadoop Cluster for compute push down
-	- HDInsight Spark/Hive Cluster for table projections.  
+	- HDInsight Spark/Hive Cluster for table exports.  
 
 	![Use Case 1-Architecture Overview](./assets/media/HIGHLEVEL-ARCH1.PNG "Use Case 1-Architecture Overview")  
 
@@ -121,14 +121,14 @@ on SQL DW and Parallel DW while on SQL Server 16 customers can achieve this by f
 
 This use case covers the following patterns:   
 
-1. Data projection to HDInsight clusters using Polybase; target external tables that are backed by Azure Blob.  
+1. Data export to HDInsight clusters using Polybase; target external tables that are backed by Azure Blob.  
 
 2. PolyBase query scale-out from SQL Server 16 to Hadoop MapReduce; query compute "predicate" push-down.
 
-#### Data Projection Pipeline  
+#### Data Export Pipeline  
 The architecture of this pattern can be broken down into two cases.  
 
-1. **Initial Bulk Copy -** The entire data is projected one time using PolyBase to your HDInsight cluster using external tables.
+1. **Initial Bulk Copy -** The entire data is exported one time using PolyBase to your HDInsight cluster using external tables.
 ![Use Case 1-Architecture](./assets/media/uc1-bulk.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")  
 
 1. **Incremental Delta Data Copy -** Copy activity for modified rows or changes in data can be easily orchestrated using ADF with PolyBase support.  
@@ -153,13 +153,13 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 **Essential House keeping**  
 
-- From Azure portal, get the connection details of the deployed SQL Server 2016.  
+1. From Azure portal, get the connection details of the deployed SQL Server 2016.  
 
-- Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
+1. Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
 
-- On the virtual machine, open **SQL Server Management Studio (SSMS).**  
+1. On the virtual machine, open **SQL Server Management Studio (SSMS).**  
 
-- For authenticating to the SQL instance, use **Windows Authentication**.
+1. For authenticating to the SQL instance, use **Windows Authentication**.
 
 > From SSMS, you may encounter the following error message while trying to export your tables.
 >
@@ -238,7 +238,7 @@ The following PolyBase T-SQL objects are required.
 
 ####  Create the T-SQL objects
 Polybase can create objects that depend on either Hadoop or Azure Blob. For the purposes of this pattern, we will be creating our external data source that depends on the latter.
-Connect to the AdventureWorks2012 database pre-loaded on the earlier created SQL Server 2016 and following instructions below.
+Connect to the AdventureWorks2012 database pre-loaded on the earlier created SQL Server 2016 and following the instructions below.
 
 **LINKS**  - You can interact with SQL Server 2016 via [Visual Studio](https://www.visualstudio.com/) or [Microsoft SQL Server Management Studio](https://msdn.microsoft.com/en-us/library/mt238290.aspx).  
 
@@ -289,7 +289,7 @@ CREATE EXTERNAL FILE FORMAT TextFileFormat WITH (
 #### Create an external table and define table schema to hold data.
 
 > **Important Note**  
-The external table's schema definitions must match the schema of table we are trying to project. Decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`.
+The external table's schema definitions must match the schema of table we are trying to export. Decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`.
 
 
 ##### Expand the `Columns` folder in SQL Server Management Studio (SSMS) to examine.   
@@ -301,7 +301,7 @@ The external table's schema definitions must match the schema of table we are tr
 ##### Point External table to Blob container
 
  > **IMPORTANT**  
-  > WASB must be able to find the Azure Storage account key in it's configuration. Using `SET` statement to provide a new secret key will not work. `CREATE TABLE` runs in the metastore service and has not visibility to the `SET` statements. Hence no runtime configuration changes will be used.
+  > WASB must be able to find the Azure Storage account key in it's configuration. Using `SET` statement to provide a new secret key will not work. `CREATE TABLE` runs in the metastore service and has no visibility to the `SET` statements. Hence no runtime configuration changes will be used.
   >
   > **Remedy -** Create extra containers in the Storage Account attached to the HDI Cluster and save any extra data. Easily achieve this using [Azure portal](https://portal.azure.com/signin/index/?cdnIndex=4&l=en.en-us) or [Azure Storage Explorer](http://storageexplorer.com/),
 
@@ -344,7 +344,7 @@ WITH (LOCATION='/product',
 1. **LOCATION:** Path to a file or directory that contains the actual data (this is relative to the blob container described earlier).  
 	- To point to all files under the blob container, use **LOCATION='/'**  
 
-##### Project and export data  
+##### Export data to Blob Storage 
 Move on-prem data to Azure blob using Polybase.  
 `INSERT INTO dbo.Product SELECT * FROM AdventureWorks2012.Production.Product;`  
 
@@ -353,7 +353,7 @@ At this point, our data is exported sucessfully Azure Storage. It is easily acce
 >For detailed information on [Creating PolyBase T-SQL objects](https://msdn.microsoft.com/en-us/library/mt652315.aspx).
 
 ##### Integrate exported data back to HDI  (Hive example)
-The exported data can now be loaded back to HDI for ETL, Update or Merge tasks.
+Using the Ambari Hive view, the exported data can now be loaded back to HDI for ETL, Update or Merge tasks.
 
 ```
 CREATE DATABASE IF NOT EXISTS DATAANALYTICS;
@@ -643,7 +643,7 @@ CREATE EXTERNAL FILE FORMAT TextFileFormat WITH (
 - Create an external table and define table schema.
 
 > **Important Note**  
-The external table's schema definitions must match the schema of table we are trying to project. Remember to decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`.
+The external table's schema definitions must match the schema of table we are trying to export. Remember to decompose defined data types, like `FinishedGoodsFlag`, into its underlying data type `BIT`.
 
 
 ###### Expand the `Columns` folder in SQL Server Management Studio (SSMS) to examine.   
@@ -699,8 +699,8 @@ SELECT * FROM dbo.Product;
 
 ![Empty Product table to show external file created](./assets/media/empty-product-table.PNG "/Empty Product Table")
 
-###### Project and export data  
-For this pattern, we will assume product related ETL is performed on Hadoop. This ETL generates a **Product** table that is needed also in SQL Server ETL. We will project sample data to simulate this from AdventureWorks2012 Product table.
+###### Export sample data to Hadoop  
+For this pattern, we will assume product related ETL is performed on Hadoop. This ETL generates a **Product** table that is needed also in SQL Server ETL. We will export sample data to simulate this from AdventureWorks2012 Product table.
 
 To export on-prem data to HDFS using Polybase.  
 
@@ -763,7 +763,7 @@ Our tutorial tries to focus on harmonization processes and routes, hence we will
 
 
 #### Use Case Overview
-Let us assume a scenario can exist where all sales information and transactions are sensitive and need to be kept protected on a SQL data source. Now an ETL that creates inventory and profit projections/visualizations on Power BI may need NoSQL product data residing on Azure Data Lake Store (ADLS) and historical sales data. This becomes a bit tricky due to the disparate source of data and the complex computation to generate this. The Historical ETL can only run on SQL DW (due to the location of the sales data) and NoSQL product data transactions run close to ADLS. We need to figure out an intelligent approach of virtualizing this scenario without increasing resource overhead and network I/O.   
+Let us assume a scenario can exist where all sales information and transactions are sensitive and need to be kept protected on a SQL data source. Now an ETL that creates inventory and profit visualizations on Power BI may need NoSQL product data residing on Azure Data Lake Store (ADLS) and historical sales data. This becomes a bit tricky due to the disparate source of data and the complex computation to generate this. The Historical ETL can only run on SQL DW (due to the location of the sales data) and NoSQL product data transactions run close to ADLS. We need to figure out an intelligent approach of virtualizing this scenario without increasing resource overhead and network I/O.   
 
 To solve this and show case the power of this use case, we can demonstrate how a complex query can be constructed at the SQL Data Warehouse side (for the sales data) and without materializing the generated tables leverage parallelized in-memory computation of Spark to bring in the NoSQL product data.  
 
@@ -841,7 +841,8 @@ Follow instructions here on how to [Create an HDInsight cluster with Data Lake S
 #### Manually load AdventureWorks sample data.  
 Follow link to load [Sample data into the deployed SQL Data Warehouse](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/).  
 
-
+> IMPORTANT NOTE  
+> This step takes about 15 minutes to load the Data Warehouse and run Statistics. 
 
 #### Data Source
 1. **AdventureWorks** Dataset (Loaded manually above)
@@ -854,14 +855,15 @@ Generate a historical **VIEW** of our sales data until last year.
 CREATE VIEW SalesFromPastYears
 AS
 SELECT
-    [SalesOrderNumber]
-    ,[SalesOrderLineNumber]
+	a.ProductKey,
+    SalesOrderNumber
+    ,SalesOrderLineNumber
     ,p.EnglishProductName as ProductName
     ,st.SalesTerritoryCountry
-    ,[OrderQuantity]
-    ,[UnitPrice]
-    ,[ExtendedAmount]
-    ,[SalesAmount]
+    ,OrderQuantity
+    ,UnitPrice
+    ,ExtendedAmount
+    ,SalesAmount
     ,(convert(date, CAST(OrderDateKey as varchar))) AS [OrderDate]
 FROM [dbo].[FactInternetSales] a
 inner join dbo.DimProduct p on a.ProductKey = p.ProductKey

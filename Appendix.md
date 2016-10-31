@@ -109,7 +109,7 @@ It'll be a very useful tool to assist your translation of SQL logic to Hive on H
 
 > 2. [Difference Between SQL and T-SQL](http://www.differencebetween.net/technology/software-technology/difference-between-sql-and-t-sql/) by www.diferencebetween.net
 
-###### Start PolyBase service in deployed SQL Server 2016  
+### Start PolyBase service in deployed SQL Server 2016  
 The pre-packaged image of the SQL Server 2016 has PolyBase already installed. However, the PolyBase services (Data Movement and Engine Services) are tied to the network identification of the original installation, causing both services not to start automatically. Trying to start the service manually gives an error.
 
 
@@ -173,7 +173,7 @@ A SQL Server ISO is saved on the VM **"C"** drive for easy reinstall.
 		![Confirm PolyBase and MSSQLSERVER Services are running](./assets/media/POLYBASE-RESTART10.PNG "Confirm PolyBase and MSSQLSERVER Services are running.")  
 
 
-###### Create the Certificate and Service Principal Identity  
+### Create the Certificate and Service Principal Identity  
 
 
 1. Requirements

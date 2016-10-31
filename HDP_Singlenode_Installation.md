@@ -95,10 +95,10 @@ These tuning parameters can be made directly on the xml configuration files or m
 	![Change to new group](./assets/media/AMBARI-NEW-CONFIG-MGR6.PNG "Change to new Group")   
 
 	Override memory settings by clicking on the **Override** symbol.
-		![Override Settings](./assets/media/AMBARI-NEW-CONFIG-MGR12.PNG "Override Settings")  
+		![Override Settings](./assets/media/AMBARI-NEW-CONFIG-MGR12.png "Override Settings")  
 
 	Increase the map and reduce memory. In this scenario for a 28GB Ram and 2 Core machine, set the Map Memory to 4GB (4098MB) and Reduce Memory as 8GB (8192MB). Sort Allocation Memory adjusts by default to half the size of the Map Memory.  Save configuration changes.
-	> NOTE
+	> NOTE  
 	> The rectangles in blue alert you that there are other dependent services that need to be adjusted with memory updates for MapReduce Framework.    
 
 	![Change to MapReduce Framework ](./assets/media/AMBARI-NEW-CONFIG-MGR8.PNG "Change to new Group")  
