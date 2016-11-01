@@ -23,7 +23,7 @@ depending on the situations. There is a growing need to leverage a hybrid on-pre
 
 The purpose of this tutorial is to discuss some identified use cases and solutions to achieve them using Microsoft Azure products.  
 
-These identified patterns are not just recurring for various clients, but appears to be the growing business process trend. We've done some research and put together this tutorial that tries to cover these cases.
+These identified patterns are not just recurring for various clients, but appear to be the growing business process trend. We've done some research and put together this tutorial that tries to cover these cases.
 
 A few possible scenarios are:
 
@@ -33,7 +33,7 @@ A few possible scenarios are:
 
 - Leverage SQL knowledge both on-prem and in cloud on both relational and non-relational data.
 
-- Avoiding low throughput on your data pipeline due to constant large data transfers
+- Avoiding low throughput on your data pipeline due to constant large data transfers.
 
 - Segregation and security of sensitive information on-prem while using the cloud for large crunching of other types of data.
 
@@ -55,11 +55,9 @@ The tutorial will describe the overall approach through the following steps:
 on the given use case.
 
 
-We assume the following prerequisites are fulfilled -  
+We assume the following prerequisite is fulfilled:  
 
-1. An Active [Azure](https://azure.microsoft.com/) subscription.
-
-1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands  
+1. An Active [Azure](https://azure.microsoft.com/) subscription.  
 
 ## High Level Use Case(s) Architecture
 1. Hybrid scenario with SQL Server 2016 and HDInsight Spark/Hive Cluster for data exports. Azure Blob Storage serves as Source of Truth.  
@@ -81,7 +79,7 @@ We assume the following prerequisites are fulfilled -
 
 1. [Use Case 2 - Hybrid Data Analytics from On-Premises SQL Server 2016 to Hadoop MapReduce using PolyBase for compute pushdown](#query-scale-out-predicate-pushdown-pipeline)
 
-1. [Use Case 3 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
+1. [Use Case 3 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-data-warehouse)
 
 1. [Troubleshooting](Troubleshooting.md)
 
@@ -136,7 +134,7 @@ The architecture of this pattern can be broken down into two cases.
 ![Use Case 1-Architecture](./assets/media/uc1-bulk.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")  
 
 > **IMPORTANT NOTE**  
-> **Automated Data Copy -** An Azure Data Factory pipeline can be deployed.  With a copy activity, data migration can be automated to Blob Storage; and other data stores. An initial transfer can be initiated using a direct PolyBase movement, as this pattern explains, while modified rows or changes in data can be easily orchestrated using ADF with PolyBase support.  
+> **Automated Data Copy -** An Azure Data Factory pipeline can be deployed.  With a copy activity, data migration can be automated to Blob Storage (and other data stores). An initial transfer can be initiated using a direct PolyBase movement, as this pattern explains, while modified rows or changes in data can be easily orchestrated using ADF with PolyBase support.  
 
 
 #### Resource Deployment  
@@ -156,75 +154,83 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 #### Data Source
 1. AdventureWorks2012.
 
-**Essential House keeping**  
-
+#### Accessing to deployed SQL Server 2016
 1. From Azure portal, get the connection details of the deployed SQL Server 2016.  
 
 1. Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
 
-1. On the virtual machine, open **SQL Server Management Studio (SSMS).**  
+1.  On the virtual machine, open **SQL Server Management Studio (SSMS).**  
 
 1. For authenticating to the SQL instance, use **Windows Authentication**.
 
-> From SSMS, you may encounter the following error message while trying to export your tables.
->
->  
->`Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.`  
->
-> The following configurations must be set correctly.
-> 1. PolyBase must be allowed to export external tables.
-> 1. The legacy compability estimation must be turned off.  
-> 1. Your database compability level must be at least 120.
 
+#### Essential House keeping  
 
+From SSMS, you may encounter the following error message while trying to export your tables.
+
+  
+ Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.  
+
+ The following configurations must be set correctly.
+
+ 1. PolyBase must be allowed to export external tables.
+ 
+ 1. PolyBase to Hadoop connectivity must be set.
+ 
+ 1. The legacy compability estimation must be turned off.  
+ 
+ 1. Your database compability level must be at least 120.  
+
+PERFORM THE FOLLOWING: 
 - Allow PolyBase to export external tables  
-```
-sp_configure 'allow polybase export', 1;
-RECONFIGURE;
-GO
-```
+
+	```
+	sp_configure 'allow polybase export', 1;
+	RECONFIGURE;
+	GO
+	```
 
 - Confirm legacy compability estimation is turned off.  
-```
-SELECT  name, value  
-    FROM  sys.database_scoped_configurations  
-    WHERE name = 'LEGACY_CARDINALITY_ESTIMATION';  
-```
+	```
+	SELECT  name, value  
+		FROM  sys.database_scoped_configurations  
+		WHERE name = 'LEGACY_CARDINALITY_ESTIMATION';  
+	```
 
-If set correctly, you would see  
+	If set correctly, you would see  
 
-![Legacy cardinality Estimator](./assets/media/legacy-estimation.PNG "Legacy cardinality")  
+	![Legacy cardinality Estimator](./assets/media/legacy-estimation.PNG "Legacy cardinality")  
 
 - Check database compatibility level and alter to at least 120 if needed.  
 
-Display all database levels
-```
-SELECT    d.name, d.compatibility_level  
-    FROM  sys.databases AS d;
-```
+	Display all database levels
+	```
+	SELECT    d.name, d.compatibility_level  
+		FROM  sys.databases AS d;
+	```
 
-Alter level if needed to 120.
+	Alter level if needed to 120.
 
-```
-SELECT ServerProperty('ProductVersion');  
-GO  
+	```
+	SELECT ServerProperty('ProductVersion');  
+	GO  
 
-ALTER DATABASE your_database_name  
-    SET COMPATIBILITY_LEVEL = 120;  
-GO  
+	ALTER DATABASE your_database_name  
+		SET COMPATIBILITY_LEVEL = 120;  
+	GO  
 
-SELECT    d.name, d.compatibility_level  
-    FROM  sys.databases AS d  
-    WHERE d.name = 'your_database_name';  
-GO  
+	SELECT    d.name, d.compatibility_level  
+		FROM  sys.databases AS d  
+		WHERE d.name = 'your_database_name';  
+	GO  
 
-```
+	```
 
-Outputs  
+	Outputs  
 
-| name          | compability_level
-| ------------- |:-------------:|
-| `your_database_name`| 120 |
+	| name          | compability_level
+	| ------------- |:-------------:|
+	| `your_database_name`| 120 |
 
 
 At this point, our SQL Server 2016 is ready to support PolyBase transactions.
@@ -467,28 +473,34 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 
 - To persist configurations, overwrite the variables in the PolyBase configuration folder. That way PolyBase uses this as primary.
 	- Using your **RDP** application, log into the VM.  
+	
 	- On SQL Server 16, navigate to `C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf`  
+	
 	- Backup the following existing files  
 		- `mapred-site.xml`  
-	- Copy over the downloaded/updated versions (from Ambari configuration modifications). On your local machine, unzip the following zip files MAPREDUCE2_CLIENT-configs.tar.gz and YARN_CLIENT-configs.tar.gz.  
-	Drill down to **MAPREDUCE2_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\MAPREDUCE2_CLIENT-configs**.  
-	Copy the `mapred-site.xml` from the MAPREDUCE2_CLIENT-configs, and replace the mapred-site.xml on the VM with it.  
+	- Copy over the downloaded/updated versions (from Ambari configuration modifications) to your local machine.  	
+	
+	- On your local machine, unzip the following zip files MAPREDUCE2_CLIENT-configs.tar.gz and YARN_CLIENT-configs.tar.gz.  	  
+	
+	- Drill down to **MAPREDUCE2_CLIENT-configs.tar\var\lib\ambari-server\data\tmp\MAPREDUCE2_CLIENT-configs**.  
+	
+	- Copy the `mapred-site.xml` from the MAPREDUCE2_CLIENT-configs, and replace the mapred-site.xml on the VM with it.  
 
 	- Update `mapred-site.xml` for hdp.version, mapreduce split size and cross-platform (PolyBase on Windows to Hadoop possibly running on Linux).
 	Open the VM version of `mapred-site.xml` and add the following.  
 
 		```
 		<property>
-			<name>hdp.version</name>
-			<value>2.4.3.0-227</value>
+		    <name>hdp.version</name>
+		    <value>2.4.3.0-227</value>
 		</property>
 		<property>
-			<name>mapred.min.split.size</name>
-			<value>1073741824</value>
+		    <name>mapred.min.split.size</name>
+		    <value>1073741824</value>
 		</property>
 		<property>
-			<name>mapreduce.app-submission.cross-platform</name>
-			<value>true</value>
+		    <name>mapreduce.app-submission.cross-platform</name>
+		    <value>true</value>
 		</property>
 		```  
 
@@ -502,96 +514,113 @@ PolyBase to Hadoop connectivity uses the following configuration levels (in the 
 		![Restart PolyBase Services](./assets/media/AMBARI-NEW-CONFIG-MGR18.PNG "Restart PolyBase Services")  
 
 
-##### Data Source
+#### Data Source
 1. AdventureWorks2012.
 
-**Essential House keeping**  
 
-- From Azure portal, get the connection details of the deployed SQL Server 2016.  
+#### Accessing to deployed SQL Server 2016
+1. From Azure portal, get the connection details of the deployed SQL Server 2016.  
 
-- Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
+1. Log on to the virtual machine using your favorite Remote Desktop Protocol (RDP) software.
 
-- On the virtual machine, open **SQL Server Management Studio (SSMS).**  
+1.  On the virtual machine, open **SQL Server Management Studio (SSMS).**  
 
-- For authenticating to the SQL instance, use **Windows Authentication**.
-
-> From SSMS, you may encounter the following error message while trying to export your tables.
->
->  
-> Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.  
->
-> The following configurations must be set correctly.
-> 1. PolyBase must be allowed to export external tables.
-> 1. PolyBase to Hadoop connectivity must be set.
-> 1. The legacy compability estimation must be turned off.  
-> 1. Your database compability level must be at least 120.
+1. For authenticating to the SQL instance, use **Windows Authentication**.
 
 
+#### Essential House keeping  
+
+From SSMS, you may encounter the following error message while trying to export your tables.
+
+  
+ Queries that reference external tables are not supported by the legacy cardinality estimation framework. Ensure that trace flag 9481 is not enabled, the database compatibility level is at least 120 and the legacy cardinality estimator is not explicitly enabled through a database scoped configuration setting.  
+
+ The following configurations must be set correctly.
+
+ 1. PolyBase must be allowed to export external tables.
+ 
+ 1. PolyBase to Hadoop connectivity must be set.
+ 
+ 1. The legacy compability estimation must be turned off.  
+ 
+ 1. Your database compability level must be at least 120.
+
+ 1. Grant PolyBase file access and ownership of hdfs directory for storage  
+
+PERFORM THE FOLLOWING:
 - Allow PolyBase to export external tables  
 
-```
-sp_configure 'allow polybase export', 1;
-RECONFIGURE;
-GO
-```
+	```
+	sp_configure 'allow polybase export', 1;
+	RECONFIGURE;
+	GO
+	```
 
 - Allow PolyBase to connect to Hadoop
 
-```
--- Different values map to various external data sources.  
--- Example: value 7 stands for Azure blob storage and Hortonworks HDP 2.X on Linux/Windows.  
+	```
+	-- Different values map to various external data sources.  
+	-- Example: value 7 stands for Azure blob storage and Hortonworks HDP 2.X on Linux/Windows.  
 
-sp_configure @configname = 'hadoop connectivity', @configvalue = 7;   
-RECONFIGURE ;  
-GO   
-```
+	sp_configure @configname = 'hadoop connectivity', @configvalue = 7;   
+	RECONFIGURE ;  
+	GO   
+	```
 
 - Confirm legacy compability estimation is turned off.  
 
-```
-SELECT  name, value  
-    FROM  sys.database_scoped_configurations  
-    WHERE name = 'LEGACY_CARDINALITY_ESTIMATION';  
-```
+	```
+	SELECT  name, value  
+		FROM  sys.database_scoped_configurations  
+		WHERE name = 'LEGACY_CARDINALITY_ESTIMATION';  
+	```
 
-If set correctly, you would see  
+	If set correctly, you would see  
 
-![Legacy cardinality Estimator](./assets/media/legacy-estimation.PNG "Legacy cardinality")  
+	![Legacy cardinality Estimator](./assets/media/legacy-estimation.PNG "Legacy cardinality")  
 
 - Check database compatibility level and alter to at least 120 if needed.  
 
-Display all database levels
-```
-SELECT    d.name, d.compatibility_level  
-    FROM  sys.databases AS d;
-```
+	Display all database levels
+	```
+	SELECT    d.name, d.compatibility_level  
+		FROM  sys.databases AS d;
+	```
 
-Alter level if needed to 120.
+	Alter level if needed to 120.
 
-```
-SELECT ServerProperty('ProductVersion');  
-GO  
+	```
+	SELECT ServerProperty('ProductVersion');  
+	GO  
 
-ALTER DATABASE your_database_name  
-    SET COMPATIBILITY_LEVEL = 120;  
-GO  
+	ALTER DATABASE your_database_name  
+		SET COMPATIBILITY_LEVEL = 120;  
+	GO  
 
-SELECT    d.name, d.compatibility_level  
-    FROM  sys.databases AS d  
-    WHERE d.name = 'your_database_name';  
-GO  
+	SELECT    d.name, d.compatibility_level  
+		FROM  sys.databases AS d  
+		WHERE d.name = 'your_database_name';  
+	GO  
 
-```
+	```
 
-Outputs  
+	Outputs  
 
-| name          | compability_level
-| ------------- |:-------------:|
-| `your_database_name`| 120 |
+	| name          | compability_level
+	| ------------- |:-------------:|
+	| `your_database_name`| 120 |
 
 
-At this point, our SQL Server 2016 is ready to support PolyBase transactions.
+	At this point, our SQL Server 2016 is ready to support PolyBase transactions.
 
+- Set HDFS File access Control for PolyBase   
+PolyBase default user **pdw_user** requires ownership of the HDFS file directory that will
+store its data. Ssh into your Hadoop VM (or cluster) and run the following:  
+
+	```
+	sudo -u hdfs hdfs dfs -mkdir /user/pdw_user
+	sudo -u hdfs hdfs dfs -chown -R pdw_user /user/pdw_user
+	```
 
 ### Required PolyBase Objects    
 The following PolyBase T-SQL objects are required.
@@ -771,7 +800,7 @@ ORDER BY p.ProductID ASC OPTION (FORCE EXTERNALPUSHDOWN);
 
 Hadoop HDFS is the **SOURCE OF TRUTH** in this hybrid scenario. Storage on HDFS allows a large volume, veracity and velocity of data to be kept in cloud while compute is pushed very close to the data using PolyBase and from a SQL Source. The user has a seamless workflow using familiar SQL to execute parallelized computations.
 
-## Integrating NoSQL Data From HDInsight With Relational Data on SQL Datawarehouse
+## Integrating NoSQL Data From HDInsight With Relational Data on SQL Data Warehouse
 
 ## Use Case Summary   
 **INTEGRATING TRANSACTIONAL NoSQL DATA WITH REFERENTIAL/RELATIONAL DATA FROM SQL DW ON HDInsight**
@@ -790,7 +819,7 @@ Our tutorial tries to focus on harmonization processes and routes, hence we will
 #### Use Case Overview
 Let us assume a scenario can exist where all sales information and transactions are sensitive and need to be kept protected on a SQL data source. Now an ETL that creates inventory and profit visualizations on Power BI may need NoSQL product data residing on Azure Data Lake Store (ADLS) and historical sales data. This becomes a bit tricky due to the disparate source of data and the complex computation to generate this. The Historical ETL can only run on SQL DW (due to the location of the sales data) and NoSQL product data transactions run close to ADLS. We need to figure out an intelligent approach of virtualizing this scenario without increasing resource overhead and network I/O.   
 
-To solve this and show case the power of this use case, we can demonstrate how a complex query can be constructed at the SQL Data Warehouse side (for the sales data) and without materializing the generated tables leverage parallelized in-memory computation of Spark to bring in the NoSQL product data.  
+To solve this and showcase the power of this use case, we can demonstrate how a complex query can be constructed at the SQL Data Warehouse side (for the sales data) and without materializing the generated tables leverage parallelized in-memory computation of Spark to bring in the NoSQL product data.  
 
 #### Benefit(s)  
 - Click stream (NoSQL) data, like real-time information, can be combined with referential (SQL) data, like products in stock, to decide
@@ -799,7 +828,7 @@ how to control inventory of products for profitability and business intelligence
 - Queries can be scaled out and parallelized using Hive, HBase or Spark.  
 
 - HDInsight, out of the box, supports connectivity to relational data sources via `JDBC`. Using Views, complex joins can be
-materialized on SQL Datawarehouse and results pulled into Spark for further processing.
+materialized on SQL Data Warehouse and results pulled into Spark for further processing.
 
 - Complex joins can be done between Facts and Dimensions, allowing easier Update and Merge operations.
 
@@ -921,8 +950,8 @@ scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
 ```
 
 **NOTE**  
-Since our exercise implements a hybrid query harmonization between SQL DW and NoSQL, we will use the hiveContext. This will give us the SparkSQL commands and also Hive functionalities that will
-let use perform joins. We need to do this because temporary tables are registered in-memory and attached to a specific SQLContext.
+Since our exercise implements a hybrid query harmonization between SQL DW and NoSQL, we will use the HiveContext. This will give us the SparkSQL commands and also Hive functionalities that will
+let users perform joins. We need to do this because temporary tables are registered in-memory and attached to a specific SQLContext.
 
 #### Construct a HiveContext (with SQL implicit commands) and fetch data from SQL DW.
 
