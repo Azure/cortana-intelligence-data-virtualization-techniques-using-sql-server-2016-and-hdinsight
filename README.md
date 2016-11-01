@@ -612,7 +612,7 @@ PERFORM THE FOLLOWING:
 
 	At this point, our SQL Server 2016 is ready to support PolyBase transactions.
 
-- Set HDFS File access Control for PolyBase   
+- Set HDFS file access control for PolyBase   
 PolyBase default user **pdw_user** requires ownership of the HDFS file directory that will
 store its data. Ssh into your Hadoop VM (or cluster) and run the following:  
 
