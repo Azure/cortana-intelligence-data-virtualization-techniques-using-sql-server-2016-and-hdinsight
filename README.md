@@ -62,20 +62,26 @@ We assume the following prerequisites are fulfilled -
 1. Access to the latest [Azure PowerShell](http://aka.ms/webpi-azps) to run (CLI) commands  
 
 ## High Level Use Case(s) Architecture
-1. Hybrid scenarios with On-Prem SQL Server 2016 and the following:
-	- Hadoop Cluster for compute push down
-	- HDInsight Spark/Hive Cluster for table exports.  
+1. Hybrid scenario with SQL Server 2016 and HDInsight Spark/Hive Cluster for data exports. Azure Blob Storage serves as Source of Truth.  
 
-	![Use Case 1-Architecture Overview](./assets/media/HIGHLEVEL-ARCH1.PNG "Use Case 1-Architecture Overview")  
+	![Use Case 1-Architecture](./assets/media/uc1-bulk.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")
 
-2. Azure Cloud Only scenario with HDInsight Spark/Hive Cluster and Azure SQL DW.
+1. Hybrid scenario with SQL Server 2016 and Hadoop Cluster for compute push down. Hadoop HDFS serves as Source of Truth.
 
-	![Use Case 2-Architecture Overview](./assets/media/HIGHLEVEL-ARCH2.PNG "Use Case 2-Architecture Overview")
+	![Use Case 1-Architecture](./assets/media/pushdown-architecture.png "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")
+
+1. Azure Cloud Only scenario with HDInsight Spark/Hive Cluster and Azure SQL DW.  ADLS and DW both serve as Sources of Truth.  
+
+	![Use Case 2-Architecture](./assets/media/uc2_2.PNG "HDI with sQL DW Hybrid Analytics")  
+
+
 
 ## Table of Content
-1. [Use Case 1 - Hybrid Data Analytics from On-Premises SQL Server to Cloud (HDInsight and Hadoop MapReduce) using PolyBase for query scale-out and processing.](#hybrid-onprem-sqlserver16-to-cloud-data-virtualization-using-polybase)
+1. [Use Case 1 - Hybrid Data Analytics from On-Premises SQL Server 2016 to Azure HDInsight and Hadoop MapReduce using PolyBase for query scale-out processing.](#hybrid-onprem-sqlserver16-to-cloud-data-virtualization-using-polybase)  
 
-1. [Use Case 2 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
+1. [Use Case 2 - Hybrid Data Analytics from On-Premises SQL Server 2016 to Hadoop MapReduce using PolyBase for compute pushdown](#query-scale-out-predicate-pushdown-pipeline)
+
+1. [Use Case 3 - Integrating Transactional NoSQL Data in HDInsight with Referential/Relational Data in SQL DW](#integrating-nosql-data-from-hdinsight-with-relational-data-on-sql-datawarehouse)
 
 1. [Troubleshooting](Troubleshooting.md)
 
@@ -85,7 +91,7 @@ We assume the following prerequisites are fulfilled -
 ## Hybrid OnPrem SQLServer16 To Cloud Data Virtualization Using PolyBase
 #### Use Case Summary
 
-**INTEGRATING ON-PREMISES SQL SOURCES TO BIGDATA PLATFORMS LIKE HDINSIGHTS FOR PARALLELIZATION AND HADOOP FOR QUERY PUSH-DOWN.**  
+**INTEGRATING ON-PREMISES SQL SOURCES TO BIGDATA PLATFORMS LIKE HDINSIGHTS FOR PARALLELIZATION**  
 
 With the growth of data, clients will require a more robust workflow for ETL jobs.
 The option of migrating big data to cloud for this task is becoming very useful.
@@ -123,16 +129,15 @@ This use case covers the following patterns:
 
 1. Data export to HDInsight clusters using Polybase; target external tables that are backed by Azure Blob.  
 
-2. PolyBase query scale-out from SQL Server 16 to Hadoop MapReduce; query compute "predicate" push-down.
-
 #### Data Export Pipeline  
 The architecture of this pattern can be broken down into two cases.  
 
-1. **Initial Bulk Copy -** The entire data is exported one time using PolyBase to your HDInsight cluster using external tables.
+1. **Data Bulk Copy -** The entire data is exported one time using PolyBase to your HDInsight cluster using external tables.
 ![Use Case 1-Architecture](./assets/media/uc1-bulk.PNG "On-Prem SQL Server 2016 and HDInsight - Bulk Insert")  
 
-1. **Incremental Delta Data Copy -** Copy activity for modified rows or changes in data can be easily orchestrated using ADF with PolyBase support.  
-![Use Case 1-Architecture](./assets/media/uc1-incremental.PNG "On-Prem SQL Server 2016 and HDInsight - Incremental Copy")
+> **IMPORTANT NOTE**  
+> **Automated Data Copy -** An Azure Data Factory pipeline can be deployed.  With a copy activity, data migration can be automated to Blob Storage; and other data stores. An initial transfer can be initiated using a direct PolyBase movement, as this pattern explains, while modified rows or changes in data can be easily orchestrated using ADF with PolyBase support.  
+
 
 #### Resource Deployment  
 Clicking button below creates a new `blade` in Azure portal with the following resources deployed:
@@ -141,7 +146,7 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 
 1. A four node HDInsight cluster - _two head nodes and two worker nodes_.
 
-<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1a.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>
+<a target="_blank" id="deploy-to-azure" href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fbostondata.blob.core.windows.net%2Fedw-data-virtualization%2Fazuredeploy_UC1a.json"><img src="http://azuredeploy.net/deploybutton.png"/></a>  
 
 #### Extra manual deploy:
 - **Reinstall PolyBase**  
@@ -388,23 +393,39 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n'
 STORED AS TEXTFILE LOCATION 'wasb://<container_name>@<storage_account_name>.blob.core.windows.net/product';
 ```
-A simple select from HDInsight to valid the same data is seen from Hive as also SSMS.  
+A simple select from HDInsight to validate the same data is seen from Hive as also SSMS.  
 
 ```
 SELECT * FROM DATAANALYTICS.Product;
-``` 
+```
 
 Hive queries can be ran on this table. ETL processing running on Hive can be used to update this table, used in visualizations or further processing, and the results saved back to Blob Storage. Results can be merged back to SQL Server with PolyBase.
- 
+
 At this point, the `Product` external table is available to the HDInsight cluster for processing. Results from parallelized jobs (on the Product table)
 can equally be saved back to the blob location, to be easily re-ingested back to the SQL Server 2016 using PolyBase, for instance.  
 
 Azure Blob Storage is the **SOURCE OF TRUTH** in this hybrid scenario. This pattern show how easy is it to integrate SQL Sources with a Big Data Platform like Azure HDInsight for parallelized computations.
 
 
-#### Query Scale-out (Predicate Pushdown) Pipeline  
-This pattern applies to SQL Server 2016 with PolyBase support and Hortonworks HDP 2.4 on Linux found on Azure market
-place.    
+### Query Scale-out (Predicate Pushdown) Pipeline  
+#### Use Case Summary
+
+**INTEGRATING ON-PREMISES SQL SOURCES WITH HADOOP MAPREDUCE FOR QUERY PUSH-DOWN.**  
+
+This pattern builds upon **USE CASE 1**. It applies to SQL Server 2016 with PolyBase support and Hortonworks HDP 2.4 on Linux found on Azure market
+place.
+
+#### Benefit(s)  
+- Delegation of time consuming processes/jobs to the cloud for parallelized computations.
+
+- Queries can be easily scaled out.  
+
+- Sensitive data can be left On-Prem while the cloud be leveraged to work on less sensitive parts of the process flow.  
+
+
+This use case covers the following patterns:   
+
+1. PolyBase query scale-out from SQL Server 16 to Hadoop MapReduce; query compute "predicate" push-down.   
 
 
 ![Use Case 1-Architecture](./assets/media/pushdown-architecture.png "On-Prem SQL Server 2016 and Hadoop - Query Pushdown")  
