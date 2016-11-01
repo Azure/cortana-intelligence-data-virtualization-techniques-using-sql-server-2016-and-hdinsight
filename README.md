@@ -940,9 +940,10 @@ $SPARK_HOME/bin/spark-shell --jars  /usr/hdp/current/hive-server2/lib/sqljdbc4.j
 If Spark shell loads successfully, we can now connect to the SQL DW Table **FactInternetSale** and read the table.  
 The following Scala code defines connection variables to an Azure SQL Data Warehouse table and connects to the external table; making it available for querying.    
 
-```
-scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"
 
+`scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"`
+
+```
 scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"  
 ```
 
@@ -986,9 +987,8 @@ scala>  val table = "(SELECT * FROM dbo.SalesFromPastYears) AS HistoricalSales"
 
 Now fetch data.  
 
-```
-scala> val dwHistoricalSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()
-```
+
+`scala> val dwHistoricalSales = hiveContext.read.format("jdbc").option("url", url).option("driver", driver).option("dbtable", table).load()`
 
 
 To confirm a success connection, we should get a description of the columns of the table **HistoricalSales** as a **dataframe** `dwHistoricalSales`
@@ -1047,9 +1047,7 @@ You can view the data in `dwHistoricalSales` by a call to action `.show`. This w
 
   - Copy sample data to ADLS Upload [this](./assets/data/DimProduct.json) sample data (**DimProduct** table in JSON format) to ADLS by following instructions from [here!](https://azure.microsoft.com/en-us/documentation/articles/data-lake-store-get-started-portal/#uploaddata)
 
-  ```
-  scala>  val adlsProductData = hiveContext.jsonFile("adl://<your_adls_store_name>.azuredatalakestore.net/<path_to_your_adls_folder>/DimProduct.json")
-  ```
+  	`scala>  val adlsProductData = hiveContext.jsonFile("adl://<your_adls_store_name>.azuredatalakestore.net/<path_to_your_adls_folder>/DimProduct.json")`
 
   To confirm a sucessful load, print the `adlsProductData` schema.
 
@@ -1099,9 +1097,7 @@ You can view the data in `dwHistoricalSales` by a call to action `.show`. This w
 
   - Join tables
 
-  ```
-   val historicalSalesInformation = hiveContext.sql("SELECT  a.*, b.EnglishProductName as ProductName  FROM DWTableHistoricalSales a INNER JOIN ADLSProductTable b ON a.ProductKey = b.ProductKey")
-  ```
+   `val historicalSalesInformation = hiveContext.sql("SELECT  a.*, b.EnglishProductName as ProductName  FROM DWTableHistoricalSales a INNER JOIN ADLSProductTable b ON a.ProductKey = b.ProductKey")`
 
   `historicalSalesInformation` is a dataframe (formerly SchemaRDD) that we can view, manipulate and export.
 
