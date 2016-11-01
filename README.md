@@ -388,13 +388,14 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 LINES TERMINATED BY '\n'
 STORED AS TEXTFILE LOCATION 'wasb://<container_name>@<storage_account_name>.blob.core.windows.net/product';
 ```
-
-Hive queries to be ran on this table is beyond the scope of this tutorial. An easy one is a simple select from HDInsight.  
+A simple select from HDInsight to valid the same data is seen from Hive as also SSMS.  
 
 ```
 SELECT * FROM DATAANALYTICS.Product;
-```   
+``` 
 
+Hive queries can be ran on this table. ETL processing running on Hive can be used to update this table, used in visualizations or further processing, and the results saved back to Blob Storage. Results can be merged back to SQL Server with PolyBase.
+ 
 At this point, the `Product` external table is available to the HDInsight cluster for processing. Results from parallelized jobs (on the Product table)
 can equally be saved back to the blob location, to be easily re-ingested back to the SQL Server 2016 using PolyBase, for instance.  
 
