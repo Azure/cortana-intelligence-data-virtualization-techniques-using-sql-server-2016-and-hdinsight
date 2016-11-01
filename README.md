@@ -940,9 +940,8 @@ $SPARK_HOME/bin/spark-shell --jars  /usr/hdp/current/hive-server2/lib/sqljdbc4.j
 If Spark shell loads successfully, we can now connect to the SQL DW Table **FactInternetSale** and read the table.  
 The following Scala code defines connection variables to an Azure SQL Data Warehouse table and connects to the external table; making it available for querying.    
 
-```
-scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"  
-```
+
+`scala> val url = "jdbc:sqlserver://<yoursqllogicalserver>.database.windows.net:1433;database=<db_name>;user=<user_name>@<my_sqllogical_server_name>;password=<your_password>"`
 
 ```
 scala> val driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"  
