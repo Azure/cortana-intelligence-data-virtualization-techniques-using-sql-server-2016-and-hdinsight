@@ -39,13 +39,19 @@ By default Ambari WebUI is not activated on the HDP VM. A manual step is require
 Activate the Ambari portal as an admin
 via the following steps:  
 
-1. ssh into the VM and run the following command as the root user  
+1. ssh into the VM and change to the root user.  
+`sudo su -`
+
+1. Reset the Ambari admin password.    
 `ambari-admin-password-reset`
-1. When prompted enter a password. This action restarts Ambari server.  
+
+1. When prompted enter a password. Note that this action restarts Ambari server.  
 
 1. Finally run command  
 `ambari-agent restart`
-1. Point browser to `http://<hostname/ipaddress>:8080`  
+
+1. Get either the HDP fully qualified machine name or public IP address from the Azure Portal and point 
+your browser to `http://<host>:8080`  
 	- Enter the user "admin" and put the password you set up (via ssh on VM)
 
 

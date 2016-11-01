@@ -149,7 +149,7 @@ Clicking button below creates a new `blade` in Azure portal with the following r
 	PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
 
 #### Data Source
-1. Product table from AdventureWorks2012.
+1. AdventureWorks2012.
 
 **Essential House keeping**  
 
@@ -344,7 +344,7 @@ WITH (LOCATION='/product',
 1. **LOCATION:** Path to a file or directory that contains the actual data (this is relative to the blob container described earlier).  
 	- To point to all files under the blob container, use **LOCATION='/'**  
 
-##### Export data to Blob Storage 
+##### Export data to Blob Storage
 Move on-prem data to Azure blob using Polybase.  
 `INSERT INTO dbo.Product SELECT * FROM AdventureWorks2012.Production.Product;`  
 
@@ -389,15 +389,17 @@ LINES TERMINATED BY '\n'
 STORED AS TEXTFILE LOCATION 'wasb://<container_name>@<storage_account_name>.blob.core.windows.net/product';
 ```
 
-> Specific Hive queries to be ran on
-this table is beyond the scope of this tutorial.   
+Hive queries to be ran on this table is beyond the scope of this tutorial. An easy one is a simple select from HDInsight.  
+
+```
+SELECT * FROM DATAANALYTICS.Product;
+```   
 
 At this point, the `Product` external table is available to the HDInsight cluster for processing. Results from parallelized jobs (on the Product table)
 can equally be saved back to the blob location, to be easily re-ingested back to the SQL Server 2016 using PolyBase, for instance.  
 
-```
-SELECT * FROM Product;
-```   
+Azure Blob Storage is the **SOURCE OF TRUTH** in this hybrid scenario. This pattern show how easy is it to integrate SQL Sources with a Big Data Platform like Azure HDInsight for parallelized computations.
+
 
 #### Query Scale-out (Predicate Pushdown) Pipeline  
 This pattern applies to SQL Server 2016 with PolyBase support and Hortonworks HDP 2.4 on Linux found on Azure market
@@ -742,9 +744,10 @@ ORDER BY p.ProductID ASC OPTION (FORCE EXTERNALPUSHDOWN);
 	- PolyBase records ~19 seconds total round trip time.
 		- ~16 seconds for MapReduce including cold start. This can be optimized further with Hadoop tuning.
 
-	![PolyBase roundtrip time](./assets/media/SQL-SUMMARY.PNG "PolyBase SQL Summary")
+	![PolyBase roundtrip time](./assets/media/SQL-SUMMARY.PNG "PolyBase SQL Summary")  
 
 
+Hadoop HDFS is the **SOURCE OF TRUTH** in this hybrid scenario. Storage on HDFS allows a large volume, veracity and velocity of data to be kept in cloud while compute is pushed very close to the data using PolyBase and from a SQL Source. The user has a seamless workflow using familiar SQL to execute parallelized computations.
 
 ## Integrating NoSQL Data From HDInsight With Relational Data on SQL Datawarehouse
 
@@ -842,7 +845,7 @@ Follow instructions here on how to [Create an HDInsight cluster with Data Lake S
 Follow link to load [Sample data into the deployed SQL Data Warehouse](https://azure.microsoft.com/en-us/documentation/articles/sql-data-warehouse-load-sample-databases/).  
 
 > IMPORTANT NOTE  
-> This step takes about 15 minutes to load the Data Warehouse and run Statistics. 
+> This step takes about 15 minutes to load the Data Warehouse and run Statistics.
 
 #### Data Source
 1. **AdventureWorks** Dataset (Loaded manually above)
