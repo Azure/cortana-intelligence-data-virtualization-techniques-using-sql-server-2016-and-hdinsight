@@ -1,11 +1,11 @@
 <properties
 	pageTitle="Data Warehouse for Advanced Hybrid Analytics | Microsoft Azure"
 	description="Data Warehouse for Advanced Hybrid Analytics."
-	keywords="hdi, azure sql data warehouse, sql server 2016, polybase, jdbc, sparksql"
-	services="sql-data-warehouse,sql-database,hdinsight,polybase,hadoop"
+	keywords="hdi, azure sql data warehouse, sql server 2016, polybase, jdbc, sparksql, sql on-prem, NoSQL, azure iaas, azure blob storage, hdinsight"
+	services="sql-data-warehouse,sql-database,hdinsight,polybase,hadoop,hdfs,spark"
 	documentationCenter=""
 	authors="emawa"
-	manager="roalexan"
+	manager="mithal,roalexan"
 	editor=""/>
 
 <tags
@@ -14,7 +14,7 @@
 	ms.tgt_pltfrm="na"
 	ms.devlang="na"
 	ms.topic="article"
-	ms.date="08/23/2016"
+	ms.date="11/01/2016"
 	ms.author="emawa" />
 
 # Data Virtualization Patterns for Advanced Hybrid Analytics
@@ -39,8 +39,7 @@ A few possible scenarios are:
 
 - Avoid replication of business logic on multiple systems; save time, be more efficient, minimize latency and network I/O using incremental copying.
 
-#### TAGS - Data Warehouse, HDInsight, Azure, Azure Blob Storage, SQL Server 2016, Azure IAAS, NoSQL, SQL On-Prem, SparkSQL  
-
+  
 ## Scope and Prerequisites
 This tutorial helps you create end-to-end (E2E) deployment ready pipelines for each use case. Each pipeline shows one
 Azure Data virtualization capability using Azure products. For example SQL Data Sources (SQL Server 2016 (IAAS), Azure Data Warehouse), Azure Storage, PolyBase, and HDInsight.  
