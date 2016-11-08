@@ -1,0 +1,5 @@
+[sandbox]
+baseurl=http://dev2.hortonworks.com.s3.amazonaws.com/repo/dev/master/utils/
+name=Sandbox repository (tutorials)
+gpgcheck=0
+enabled=1

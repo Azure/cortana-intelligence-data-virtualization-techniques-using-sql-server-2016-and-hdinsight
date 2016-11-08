@@ -3,6 +3,9 @@
 This tutorial walks through setting up a three node HortonWorks HDP 2.4 cluster using Azure virtual machines
 found on the marketplace.  
 
+> IMPORTANT NOTE:   
+> This is adapted from HortonWorks instruction video on [HDP 2.4 Multinode Hadoop Installation using Ambari](https://www.youtube.com/watch?v=zutXwUxmaT4)  
+
 ### Prerequisites
 
 1. An Active [Azure](https://azure.microsoft.com/) subscription. 
@@ -109,17 +112,17 @@ On each virtual machine, we will be updating the `/etc/hosts` file. Machines in 
     
     - Check hostname for generic FQDN : 
         - Use `$ hostname -f` 
-        - Confirm response like `new1.anea0capqknutosov1mgg1eawh.cx.internal.cloudapp.net`  
+        - Confirm response like `node1.anea0capqknutosov1mgg1eawh.cx.internal.cloudapp.net`  
 
     - Update the hosts file 
         - Open `/etc/hosts` on machine 
 
         - Append the hostname to IP address mapping for all three nodes to `/etc/hosts`.   
-        Assuming the private IP addresses are 10.0.0.1, 10.0.0.2 and 10.0.0.3 and machine names new1, new2, and new3
+        Assuming the private IP addresses are 10.0.0.1, 10.0.0.2 and 10.0.0.3 and machine names node1, node2, and node3
             ```
-            10.0.0.1    new1    new1.eastus2.cloudapp.azure.com
-            10.0.0.2    new2    new2.eastus2.cloudapp.azure.com
-            10.0.0.3    new3    new3.eastus2.cloudapp.azure.com
+            10.0.0.1    node1    node1.eastus2.cloudapp.azure.com
+            10.0.0.2    node2    node2.eastus2.cloudapp.azure.com
+            10.0.0.3    node3    node3.eastus2.cloudapp.azure.com
             ```
         - Confirm updated hostname  
             - Use `$ hostname -f`
@@ -143,16 +146,171 @@ If Iptables is ON, a similar output as image below will be seen
 
 ### Setup Passwordless Access  
 Perform steps on all nodes.
+- Change root password  : ` sudo passwd root`  
+
+- Create new root password. **_This allows us copy over ssh keys easily._**  
+
+Now starting from first machine to three  
+- Switch to root user : `sudo su`  
+
 - Create ssh keys : `ssh-keygen`
 
-- Copy over public ssh key to other two nodes : `$ ssh-copy-id <ssh_user_created>@<other_hosts>`
+- Copy over public ssh key to other two nodes : `$ ssh-copy-id root@<other_hosts>`
 
-### Activate Ambari Agent  
+### Setup Ambari Repository
+Download the following repo files from [here](./assets/yum_repos)   
+- ambari.repo
+- epel.repo  
+- epel-testing.repo  
+- HDP.repo  
+- HDP-UTILS.repo
+- puppetlabs.repo  
+- sandbox.repo
 
+Scp them over to `/etc/yum.repos.d/` on your virtual machines
 
-### Install HDP services using Ambari   
+### Check Java and get JDK directory 
 
-### Follow instructions  
-Follow instructions to activate Ambari Agent and Install Hadoop from this [Youtube Link](https://www.youtube.com/watch?v=zutXwUxmaT4)  
+Java is pre-installed on Azure Virtual Machines  
+- Confirm Java installation and version : `java -version`
+
+- Get Java Home directory following instructions : 
+    1. Find Java bin path : `which java`  
+
+    1. Get relative link of Java : `ls -ltr <path_returned_by_which_java>`  
+
+    1. Copy path to symlink returned above and use it for this final step : `ls -ltr <path_to_symlink_copied>`  
+
+    1. Save the final JDK path returned.  
+
+Path should look like this `/usr/lib/jvm/jre-1.7.0-openjdk.x86_64/bin/java`  
+
+Otherwise follow instructions from [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-install-java-on-ubuntu-with-apt-get) on using `apt-get` to 
+install java on your machine.
+
+### Setup the Ambari Server and Agent  
+Choose one node to be the Ambari Server and follow steps below.  
+
+1. Ssh into VM and change user to root : `sudo su`  
+
+1. Clean Yum cache : `yum clean all` 
+
+1. Install Ambari Server : `yum install ambari-server -y`  
+
+1. Setup the server with the following commands: 
+    - `ambari-server setup`
+
+    -  Choose `n` for **Customize user account for ambari-server daemon**  
+
+    - Choose **Custom JDK - Option (3)** for Java JDK  
+
+    - Enter the JDK path copied above as **Path to JAVA_HOME**  
+
+    - Enter `n` for **advanced database configuration** and let Ambari install
+
+    - Start Server : `ambari-server start`
+
+### Install HDP Ambari Server View  
+
+1. Point browser to : `http://<host:8080>/`  
+
+1. Log in with username `admin` and password `admin` 
+
+1. Click on **Get Started > Launch Install Wizard**  
+    1. Name your cluster and click Next.
+
+    1. **Select Stack > Click HDP 2.4**  
+
+    1. Uncollapse **Advanced Repository Options** Menu.  
+
+        1. Uncheck the following OS options :   
+            - Debian7  
+            - Redhat7  
+            - Suse11  
+            - Ubuntu12  
+            - Ubuntu14   
+
+        1. Leave default options for Redhat6 HDP 2.4 and HDP-UTILS. (recall update of repos in `yum.repos.d`).
+
+        1. Keep **Skip Repository Base URL validation (Advanced)** as unchecked.  
+
+        Click **Next** to continue.  
+
+    1. Setup FQDN for **Target Hosts** and Allow SSH access  
+
+        1. Get FQDN from main nod i.e machine reserved to be the Resource Manager and YARN.  
+            1. Ssh into the machine 
+
+            1. `cat /etc/hosts`  
+
+            1. Copy FQDN entries of all three machines. For instance  
+
+                ```
+                node1.eastus2.cloudapp.azure.com
+                node2.eastus2.cloudapp.azure.com
+                node3.eastus2.cloudapp.azure.com
+                ```
+            1. Enter FQDN into **Targeted Host** textbox on Ambari  
+
+            1. Copy the machine's ssh private key info : `cat ~/.ssh/id_rsa`  
+
+            1. Paste private key information into **Host Registration Information** textbox 
+
+            1. Make sure **SSH User Account** is `root`  
+
+    1. Successfully **Confirm Hosts**. Host will register and install onto the cluster.  
+
+    1. Hosts will be checked for potential problems. 
+
+        1. Click on hyperlink -  **(Click here to see the warnings)**  
+
+        1. Ignore **Transparent Huge Pages Issues** warnings and continue.  
+
+    1. **Choose Services**  
+
+        - HDFS  
+        - YARN + MapReduce2
+        - Zookeeper  
+        - Ambari Metrics  
+
+        Click **Next**  
+
+    1. **Assign Masters**  
+    Change the components to be installed on different nodes using the dropdown. Ensure the following are installed on the main machine.  
+
+        - NameNode 
+
+        - Metrics Collector 
+
+        Tweak others as desired, but default settings are fine.  
+
+    1. **Assign Slaves and Clients**  
+        - Client : Set to main (master node) machine (i.e Set up to be the Resource Manager)
+
+        - NodeManager : Assign to all nodes. This is YARN's agent that handles individual machine (node) compute needs.
+
+        - DataNode : Assign to other machines (worker nodes) to allocate all resources on main node to Resource Management. 
+
+        Click **Next**  
+
+    1. **Customize Services**  
+        - Make sure NameNode and DataNode directories are pointing to `/data/hadoop/hdfs/namenode` and ` /data/hadoop/hdfs/data`. This 
+    guarantees the cluster nodes are using the earlier attached data disk.  
+
+        - Fix warning on *Ambari Mertrics**  
+            - **Ambari Metrics > General > Grafana Admin Password**  
+
+            -  Create new password  
+
+    1. Click **Deploy**  
+        This step takes a while to install components on all three nodes. For instance below -  node1.example.com, node2.example.com and node3.example.com 
+        ![Deployment Status](./assets/media/DEPLOY-MULTINODE11.PNG "Deployment")  
+
+        Check deployment progress.  
+        ![Deployment Status](./assets/media/DEPLOY-MULTINODE12.PNG "Deployment Progress")  
+
+        Confirm deployment success.  
+        ![Deployment Success](./assets/media/DEPLOY-MULTINODE13.PNG "Deployment Success")
+
 
 
