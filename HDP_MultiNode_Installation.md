@@ -125,7 +125,8 @@ On each virtual machine, we will be updating the `/etc/hosts` file. Machines in 
             10.0.0.3    node3    node3.eastus2.cloudapp.azure.com
             ```
         - Confirm updated hostname  
-            - Use `$ hostname -f`
+            - Use `$ hostname -f`  
+            
 ### Shutdown Iptables on the hosts 
 On each machine, shutdown iptables
 
