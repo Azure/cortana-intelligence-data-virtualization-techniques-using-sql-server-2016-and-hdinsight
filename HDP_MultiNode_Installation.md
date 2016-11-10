@@ -116,8 +116,8 @@ On each virtual machine, we will be updating the `/etc/hosts` file. Machines in 
 1. Go to Virtual Machines and select your machine(s)  
 
 1. Click on **Overview > Public IP address/DNS name label > Configuration** and create a **DNS name label** and **Save**. 
-Please make a note of the name you provide here, as it will be used in the later steps. For instance in imagery below, your 
-FQDN would be `new1.eastus2.cloudapp.azure.com` 
+Please make a note of the name you provide here (for example `new1`) as it will be used in the later steps. Also copy the FQDN, for instance in the imagery below, your 
+FQDN would be `new1.eastus2.cloudapp.azure.com`. 
 ![Creating a Fully Qualified Domain Name](./assets/media/DEPLOY-MULTINODE8.PNG "Create FQDN")  
 
 1. Make a note Private IP addresses (**Virtual Machines > Machine Name > Network Interfaces**)
@@ -140,12 +140,12 @@ FQDN would be `new1.eastus2.cloudapp.azure.com`
             10.0.0.2    node2    node2.eastus2.cloudapp.azure.com
             10.0.0.3    node3    node3.eastus2.cloudapp.azure.com
             ```
-
+1. Persist new hostname : `sudo hostname your_new_hostname`
 1. **Repeat above steps for the other two machines.** So that all machines in the cluster can communicate with each other.  
 
 
 ### Shutdown Iptables on the hosts 
-On each machine, shutdown iptables
+On each machine, shutdown iptables. We need to shutdown Iptables to allow the Hadoop daemons communicate across nodes. SELinux still offers security on the machines.  
 
 - Check service status : `service iptables status`  
 If Iptables is ON, a similar output as image below will be seen  
@@ -156,6 +156,10 @@ If Iptables is ON, a similar output as image below will be seen
 
 ### Ensure SELinux on the the hosts is enabled, permissive and enforced
 - Check status : `$ sestatus`  
+
+- Change the current status to `permissive` if it is `enforcing` : `setenforce 0` 
+
+We do not want to deny access to the Hadoop daemons, but just log every access. 
  
 ### Restart and Update NTP Service on the hosts 
 - Restart service : `/etc/init.d/ntpd restart`
