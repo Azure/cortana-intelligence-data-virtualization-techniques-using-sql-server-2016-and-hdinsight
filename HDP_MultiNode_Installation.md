@@ -140,9 +140,9 @@ FQDN would be `new1.eastus2.cloudapp.azure.com`
             10.0.0.2    node2    node2.eastus2.cloudapp.azure.com
             10.0.0.3    node3    node3.eastus2.cloudapp.azure.com
             ```
-        - Confirm updated hostname  
-            - Use `$ hostname -f`  
+
 1. **Repeat above steps for the other two machines.** So that all machines in the cluster can communicate with each other.  
+
 
 ### Shutdown Iptables on the hosts 
 On each machine, shutdown iptables
