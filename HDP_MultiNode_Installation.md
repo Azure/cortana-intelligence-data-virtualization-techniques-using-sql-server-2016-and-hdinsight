@@ -194,29 +194,42 @@ Download the following repo files contained in the zip folder [here](./assets/yu
 - puppetlabs.repo  
 - sandbox.repo
 
-using an Scp software, like WinSCP, copy them over to `/etc/yum.repos.d/` on your virtual machines
+Using an scp software, like WinSCP for Windows and Fugu for Mac, copy them over to `/etc/yum.repos.d/` on your virtual machines.  
 
-### Check Java and get JDK directory 
+> IMPORTANT NOTE  
+> Remember to log in as root, while using scp, in order to copy over files to `/etc/yum.repos.d/`.  
+
+
+### Get Java and JDK directory 
 
 Java is pre-installed on Azure Virtual Machines  
-- Confirm Java installation and version : `java -version`
+- Confirm Java installation and version : `java -version`  
+    
+    > IMPORTANT NOTE 
+    > Java version should be greater than or equal to 1.7x
 
 - Get Java Home directory following instructions : 
     1. Find Java bin path : `which java`  
 
+        > IMPORTANT NOTE 
+        > For example : `/usr/bin/java` for Ubuntu version 6.7
+
     1. Get relative link of Java : `ls -ltr <path_returned_by_which_java>`  
 
-    1. Copy path to symlink returned above and use it for this final step : `ls -ltr <path_to_symlink_copied>`  
+    1. Copy path to right hand side of the symlink returned above (For example /usr/bin/java -> **/etc/alternatives/java**) and use it for this final step : `ls -ltr <path_to_symlink_copied>`  
 
-    1. Save the final JDK path returned.  
+    1. Make a note of the final JDK path returned.  You will need it in the later steps for Ambari to know the JAVA_HOME
 
-Path should look like this `/usr/lib/jvm/jre-1.7.0-openjdk.x86_64/bin/java`  
+> IMPORTANT NOTE  
+> You do not need to repeat these steps (Java and JDK directory) on all machines as it will be same on all three machines.  
+
+Path should look like this `/usr/lib/jvm/jre-1.7.0-openjdk.x86_64/bin/java`. You will only need the path to the JDK like this `/usr/lib/jvm/jre-1.7.0-openjdk.x86_64/`  
 
 Otherwise follow instructions from [Digital Ocean](https://www.digitalocean.com/community/tutorials/how-to-install-java-on-ubuntu-with-apt-get) on using `apt-get` to 
 install java on your machine.
 
 ### Setup the Ambari Server and Agent  
-Choose one node to be the Ambari Server and follow steps below.  
+We choose the first node to be the Ambari Server and follow steps below.  
 
 1. Ssh into VM and change user to root : `sudo su`  
 
@@ -227,7 +240,7 @@ Choose one node to be the Ambari Server and follow steps below.
 1. Setup the server with the following commands: 
     - `ambari-server setup`
 
-    -  Choose `n` for **Customize user account for ambari-server daemon**  
+    -  Choose all the defaults until you hit **Customize user account for ambari-server daemon** and then you choose `n`
 
     - Choose **Custom JDK - Option (3)** for Java JDK  
 
@@ -239,7 +252,7 @@ Choose one node to be the Ambari Server and follow steps below.
 
 ### Install HDP Ambari Server View  
 
-1. Point browser to : `http://<host:8080>/`  
+1. Point browser from your local machine to the FQDN of first machine (Ambari Server) : `http://<FQDN_of_first_machine:8080>/`  
 
 1. Log in with username `admin` and password `admin` 
 
