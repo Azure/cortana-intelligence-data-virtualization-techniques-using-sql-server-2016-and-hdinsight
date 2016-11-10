@@ -180,7 +180,13 @@ Now starting from machines #1
 
 - Create ssh keys accepting all default prompts : `ssh-keygen`
 
-- Copy over public ssh key to other two nodes. For example to node `new2` : `$ ssh-copy-id root@new2`
+- Copy over public ssh key to other two nodes. For example to node `new2` : `$ ssh-copy-id root@new2`  
+
+- Add machine public key to its **authorized_keys** file 
+    - `$ cd ~/.ssh` 
+    - ` cat id_rsa.pub >> authorized_keys`  
+
+    You should be able to login to **localhost** passwordless. Confirm by running this : `ssh localhost`
 
 - Repeat Passwordless ssh on machines #2 and #3 using steps above.  
 
@@ -263,40 +269,32 @@ We choose the first node to be the Ambari Server and follow steps below.
 
     1. Uncollapse **Advanced Repository Options** Menu.  
 
-        1. Uncheck the following OS options :   
-            - Debian7  
-            - Redhat7  
-            - Suse11  
-            - Ubuntu12  
-            - Ubuntu14   
-
-        1. Leave default options for Redhat6 HDP 2.4 and HDP-UTILS. (recall update of repos in `yum.repos.d`).
+        1. Uncheck every Operating System except Redhat6   
 
         1. Keep **Skip Repository Base URL validation (Advanced)** as unchecked.  
 
         Click **Next** to continue.  
 
     1. Setup FQDN for **Target Hosts** and Allow SSH access  
+      
+        1. Ssh into the machine 
 
-        1. Get FQDN from main nod i.e machine reserved to be the Resource Manager and YARN.  
-            1. Ssh into the machine 
+        1. `cat /etc/hosts`  
 
-            1. `cat /etc/hosts`  
+        1. Copy FQDN entries of all three machines. For instance  
 
-            1. Copy FQDN entries of all three machines. For instance  
+            ```
+            node1.eastus2.cloudapp.azure.com
+            node2.eastus2.cloudapp.azure.com
+            node3.eastus2.cloudapp.azure.com
+            ```
+        1. Enter FQDN entries into **Targeted Host** textbox on Ambari  
 
-                ```
-                node1.eastus2.cloudapp.azure.com
-                node2.eastus2.cloudapp.azure.com
-                node3.eastus2.cloudapp.azure.com
-                ```
-            1. Enter FQDN into **Targeted Host** textbox on Ambari  
+        1. Copy the first machine's ssh private key info : `cat ~/.ssh/id_rsa`  
 
-            1. Copy the machine's ssh private key info : `cat ~/.ssh/id_rsa`  
+        1. Paste private key information into **Host Registration Information** textbox 
 
-            1. Paste private key information into **Host Registration Information** textbox 
-
-            1. Make sure **SSH User Account** is `root`  
+        1. Make sure **SSH User Account** is `root`. Hit **Register and Confirm** and then continue.  
 
     1. Successfully **Confirm Hosts**. Host will register and install onto the cluster.  
 
