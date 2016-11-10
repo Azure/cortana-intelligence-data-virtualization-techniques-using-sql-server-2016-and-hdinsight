@@ -157,30 +157,35 @@ If Iptables is ON, a similar output as image below will be seen
 ### Ensure SELinux on the the hosts is enabled, permissive and enforced
 - Check status : `$ sestatus`  
 
-- Change the current status to `permissive` if it is `enforcing` : `setenforce 0` 
+- Change the current status to `permissive` if it is `enforcing` : `$ setenforce 0` 
 
-We do not want to deny access to the Hadoop daemons, but just log every access. 
+This prevents denied access to the Hadoop daemons and Ambari installation, but just log every access. 
  
 ### Restart and Update NTP Service on the hosts 
 - Restart service : `/etc/init.d/ntpd restart`
 
 - Update runlevel settings : `chkconfig ntpd on`
 
-### Setup Passwordless Access  
+### Setup Passwordless SSH  
 Perform steps on all nodes.
 - Change root password  : ` sudo passwd root`  
 
+    > IMPORTANT NOTE:  
+    > You need to know the root password of the remote machine in order to copy over your ssh public key.  
+
 - Create new root password. **_This allows us copy over ssh keys easily._**  
 
-Now starting from first machine to three  
+Now starting from machines #1  
 - Switch to root user : `sudo su`  
 
-- Create ssh keys : `ssh-keygen`
+- Create ssh keys accepting all default prompts : `ssh-keygen`
 
-- Copy over public ssh key to other two nodes : `$ ssh-copy-id root@<other_hosts>`
+- Copy over public ssh key to other two nodes. For example to node `new2` : `$ ssh-copy-id root@new2`
+
+- Repeat Passwordless ssh on machines #2 and #3 using steps above.  
 
 ### Setup Ambari Repository
-Download the following repo files from [here](./assets/yum_repos)   
+Download the following repo files contained in the zip folder [here](./assets/yum_repos.zip)   
 - ambari.repo
 - epel.repo  
 - epel-testing.repo  
@@ -189,7 +194,7 @@ Download the following repo files from [here](./assets/yum_repos)
 - puppetlabs.repo  
 - sandbox.repo
 
-Scp them over to `/etc/yum.repos.d/` on your virtual machines
+using an Scp software, like WinSCP, copy them over to `/etc/yum.repos.d/` on your virtual machines
 
 ### Check Java and get JDK directory 
 
