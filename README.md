@@ -453,8 +453,11 @@ The following steps walk you through deploying an HDP Hadoop Sandbox (version 2.
 PolyBase will need to be re-installed on the SQL to start it on the SQL Server 2016. Find instructions in Appendix Page [here](Appendix.md#start-polybase-service-in-deployed-sql-server-2016).  
 
 2. Hadoop Cluster:  
-This tutorial is written and tested with HortonWorks Hadoop. It assumes you have an already existing Hortonworks Hadoop cluster. Otherwise please find instructions on how to install a single node
-HortonWorks cluster [here](HDP_Singlenode_Installation.md).
+This tutorial is written and tested with HortonWorks Hadoop. It assumes you have an already existing Hortonworks Hadoop cluster.  
+If you do  not have a cluster, find helpful installation guides below. Choose one of the options from the list below. Using either option below would allow you to complete the tutorial.      
+	1. **QUICK SINGLE NODE SANDBOX DEPLOYMENT** - Install a [single node HortonWorks cluster](HDP_Singlenode_Installation.md).  
+	`OR` 
+	1. **FULL MULTINODE CLUSTER DEPLOYMENT** - Install a [three node Hortonworks cluster](HDP_MultiNode_Installation.md).
 
 3. Set the essential Hadoop MapReduce and YARN configurations:  
 For PolyBase connectivity, memory considerations need to be made for MapReduce and YARN.  Follow instructions

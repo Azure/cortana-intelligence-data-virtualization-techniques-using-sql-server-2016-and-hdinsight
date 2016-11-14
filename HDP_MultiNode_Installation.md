@@ -337,7 +337,7 @@ We choose the first node to be the Ambari Server and follow steps below.
             - From the top menu tabs (between **Zookeeper** and **Misc**) select **Ambari Metrics**  
                 - Click on **Ambari Metrics**  
                 - Uncollapse **General** (under Ambari Metrics). This should have a **Red Warning** flag.  
-                - Scroll down to **Grafana Admin Password**
+                - Scroll down to **Grafana Admin Password** (If you find one)
                 -  Create new password   
             - Scroll to the end of the page and click on **Next**
 
