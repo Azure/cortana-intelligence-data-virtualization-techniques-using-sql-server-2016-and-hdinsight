@@ -294,15 +294,11 @@ We choose the first node to be the Ambari Server and follow steps below.
 
         1. Paste private key information into **Host Registration Information** textbox 
 
-        1. Make sure **SSH User Account** is `root`. Hit **Register and Confirm** and then continue.  
+        1. Make sure **SSH User Account** is `root`. Hit **Confirm and Register** and then continue.  
 
     1. Successfully **Confirm Hosts**. Host will register and install onto the cluster.  
 
-    1. Hosts will be checked for potential problems. 
-
-        1. Click on hyperlink -  **(Click here to see the warnings)**  
-
-        1. Ignore **Transparent Huge Pages Issues** warnings and continue.  
+    1. Hosts will be checked for potential problems, ignore any warnings and continue. 
 
     1. **Choose Services**  
 
@@ -329,16 +325,21 @@ We choose the first node to be the Ambari Server and follow steps below.
 
         - DataNode : Assign to other machines (worker nodes) to allocate all resources on main node to Resource Management. 
 
+        - NFSGateway : This is not relevant for this tutorial. However feel free to assign this to main (master node) machine. This gives clients the ability to mount HDFS and interact with it using NFS.  
+
         Click **Next**  
 
     1. **Customize Services**  
         - Make sure NameNode and DataNode directories are pointing to `/data/hadoop/hdfs/namenode` and ` /data/hadoop/hdfs/data`. This 
     guarantees the cluster nodes are using the earlier attached data disk.  
 
-        - Fix warning on *Ambari Mertrics**  
-            - **Ambari Metrics > General > Grafana Admin Password**  
-
-            -  Create new password  
+        - Fix warning on **Ambari Metrics**  
+            - From the top menu tabs (between **Zookeeper** and **Misc**) select **Ambari Metrics**  
+                - Click on **Ambari Metrics**  
+                - Uncollapse **General** (under Ambari Metrics). This should have a **Red Warning** flag.  
+                - Scroll down to **Grafana Admin Password**
+                -  Create new password   
+            - Scroll to the end of the page and click on **Next**
 
     1. Click **Deploy**  
         This step takes a while to install components on all three nodes. For instance below -  node1.example.com, node2.example.com and node3.example.com 
