@@ -266,7 +266,7 @@
                     "location": "[parameters('location')]",
                     "dependsOn": [
                         "[variables('virtual-machine-id')]",
-                        "[variables('nic-id')]",
+                        "[variables('nic-id')]"
                     ],
                     "properties": {
                         "publisher": "Microsoft.Compute",
