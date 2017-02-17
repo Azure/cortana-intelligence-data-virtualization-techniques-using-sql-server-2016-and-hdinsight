@@ -27,7 +27,7 @@
         "hdinsight-version": "2015-03-01-preview",
         "prefix": "dv",
         "polybase-storage-container": "product",
-        "hdinsight-name": "[concat(variables('prefix'), '-hdi-', parameters('unique'))]",
+        "hdinsight-name": "[concat(variables('prefix'), '-hdi-', variables('unique'))]",
         "hdinsight-id": "[resourceId('Microsoft.HDInsight/clusters', variables('hdinsight-name'))]",
         "hdinsight-os-profile": {
             "linuxOperatingSystemProfile": { "username": "[parameters('admin-username')]", "password": "[parameters('admin-password')]" }
@@ -41,7 +41,7 @@
         "hdinsight-headnode-0": "[concat('hn0-', take(variables('hdinsight-name'), 6))]",
         "hdinsight-headnode-1": "[concat('hn1-', take(variables('hdinsight-name'), 6))]",
         "hdinsight-script-uri": "https://rbateststore.blob.core.windows.net/hdiscriptactions/copyhdpdir.sh",
-        "storage-account-name": "[concat(variables('prefix'), 'stor', parameters('unique'))]",
+        "storage-account-name": "[concat(variables('prefix'), 'stor', variables('unique'))]",
         "storage-account-id": "[resourceId('Microsoft.Storage/storageAccounts', variables('storage-account-name'))]",
         "storage-sku": "Standard_LRS",
         "virtual-machine-name": "[take(concat(variables('prefix'), '-sqlvm'), 15)]",
@@ -72,7 +72,7 @@
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storage-account-name')]",
             "apiVersion": "[variables('storage-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "sku": { "name": "[variables('storage-sku')]" },
             "kind": "Storage",
             "properties": { }
@@ -82,7 +82,7 @@
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('vnet-name')]",
             "apiVersion": "[variables('network-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "properties": {
                 "addressSpace": { "addressPrefixes": [ "[variables('vnet-address-prefix')]" ] },
                 "subnets": [
@@ -98,7 +98,7 @@
             "name": "[variables('public-ip-name')]",
             "type": "Microsoft.Network/publicIpAddresses",
             "apiVersion": "[variables('network-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "properties": {
                 "publicIpAllocationMethod": "[variables('public-ip-type')]"
             }
@@ -108,7 +108,7 @@
             "name": "[variables('network-security-name')]",
             "type": "Microsoft.Network/networkSecurityGroups",
             "apiVersion": "[variables('network-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "properties": {
                 "securityRules": [
                     {
@@ -123,7 +123,7 @@
             "name": "[variables('nic-name')]",
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "[variables('network-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[variables('vnet-id')]",
                 "[variables('public-ip-id')]",
@@ -150,7 +150,7 @@
             "type": "Microsoft.Compute/virtualMachines",
             "name": "[variables('virtual-machine-name')]",
             "apiVersion": "[variables('virtual-machine-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "dependsOn": [
                 "[variables('nic-id')]",
                 "[variables('hdinsight-id')]"
@@ -163,7 +163,7 @@
                     "windowsConfiguration": { "provisionVmAgent": "true" }
                 },
                 "hardwareProfile": {
-                    "vmSize": "[parameters('sql-vm-size')]"
+                    "vmSize": "[variables('sql-vm-size')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -176,7 +176,7 @@
                         "name": "[variables('virtual-machine-name')]",
                         "createOption": "FromImage",
                         "vhd": {
-                            "uri": "[concat(reference(variables('storage-account-id'), variables('storage-version')).primaryEndpoints['blob'], 'vhds/', variables('virtual-machine-name'), '-os-', parameters('unique'), '.vhd')]"
+                            "uri": "[concat(reference(variables('storage-account-id'), variables('storage-version')).primaryEndpoints['blob'], 'vhds/', variables('virtual-machine-name'), '-os-', variables('unique'), '.vhd')]"
                         }
                     },
                     "dataDisks": [
@@ -187,7 +187,7 @@
                             "diskSizeGB": "1023",
                             "caching": "ReadOnly",
                             "vhd": {
-                                "uri": "[concat(reference(variables('storage-account-id'), variables('storage-version')).primaryEndpoints['blob'], 'vhds/', variables('virtual-machine-name'), '-disk-1-', parameters('unique'), '.vhd')]"
+                                "uri": "[concat(reference(variables('storage-account-id'), variables('storage-version')).primaryEndpoints['blob'], 'vhds/', variables('virtual-machine-name'), '-disk-1-', variables('unique'), '.vhd')]"
                             }
                         }
                     ]
@@ -203,7 +203,7 @@
                     "type": "extensions",
                     "name": "[variables('vm-ext-sql-name')]",
                     "apiVersion": "[variables('virtual-machine-version')]",
-                    "location": "[parameters('location')]",
+                    "location": "[variables('location')]",
                     "dependsOn": [
                         "[variables('virtual-machine-id')]"
                     ],
@@ -213,7 +213,7 @@
                         "typeHandlerVersion": "1.2",
                         "autoUpgradeMinorVersion": "true",
                         "settings": {
-                            "AutoTelemetrySettings": { "Region": "[parameters('location')]" },
+                            "AutoTelemetrySettings": { "Region": "[variables('location')]" },
                             "AutoPatchingSettings": {
                                 "PatchCategory": "WindowsMandatoryUpdates",
                                 "Enable": true,
@@ -251,7 +251,7 @@
                     "type": "extensions",
                     "name": "[variables('vm-ext-dv-name')]",
                     "apiVersion": "[variables('virtual-machine-version')]",
-                    "location": "[parameters('location')]",
+                    "location": "[variables('location')]",
                     "dependsOn": [
                         "[variables('virtual-machine-id')]",
                         "[variables('nic-id')]"
@@ -274,7 +274,7 @@
             "type": "Microsoft.HDInsight/clusters",
             "name": "[variables('hdinsight-name')]",
             "apiVersion": "[variables('hdinsight-version')]",
-            "location": "[parameters('location')]",
+            "location": "[variables('location')]",
             "dependsOn": [ 
                 "[variables('storage-account-id')]",
                 "[variables('vnet-id')]"
@@ -308,7 +308,7 @@
                         {
                             "name": "headnode",
                             "targetInstanceCount": "[variables('hdinsight-headnode-count')]",
-                            "hardwareProfile": { "vmSize": "[parameters('headnode-vm-size')]" },
+                            "hardwareProfile": { "vmSize": "[variables('headnode-vm-size')]" },
                             "osProfile": "[variables('hdinsight-os-profile')]",
                             "virtualNetworkProfile": "[variables('hdinsight-vnet-profile')]",
                             "scriptActions": [
@@ -318,7 +318,7 @@
                         {
                             "name": "workernode",
                             "targetInstanceCount": "[variables('hdinsight-workernode-count')]",
-                            "hardwareProfile": { "vmSize": "[parameters('workernode-vm-size')]" },
+                            "hardwareProfile": { "vmSize": "[variables('workernode-vm-size')]" },
                             "osProfile": "[variables('hdinsight-os-profile')]",
                             "virtualNetworkProfile": "[variables('hdinsight-vnet-profile')]"
                         }
