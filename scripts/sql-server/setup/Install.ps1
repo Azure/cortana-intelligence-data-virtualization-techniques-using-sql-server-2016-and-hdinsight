@@ -118,8 +118,8 @@ $result = Invoke-Command localhost {
   $jreFile = @{ name = "jre-8u121-windows-x64.exe"; uri = $uris.jre; hash = "A963C6B8A012E658A3D657C4897CF7C8" }
   $workingDir = "C:\Tutorial"
   $dbDir = [IO.Path]::Combine($workingDir, 'db')
-  $scriptsDir = [IO.Path]::Combine($workingDir, 'sql')
-  $zipSrc = [IO.Path]::Combine($current, $sqlScriptsFile.name)
+  $scriptsStagingDir = [IO.Path]::Combine($current, 'sql')
+  $scriptsZip = [IO.Path]::Combine($current, $sqlScriptsFile.name)
 
   # download files
   $client = New-Object Net.Webclient
@@ -145,9 +145,9 @@ $result = Invoke-Command localhost {
   New-Item $dbDir -Type Directory
 
   # environment vars
-  "Extracting $zipSrc to $scriptsDir"
-  [IO.Compression.ZipFile]::ExtractToDirectory($zipSrc, $scriptsDir)
-  $scriptFiles = Get-ChildItem $scriptsDir -Recurse -File -Include *.tpl
+  "Extracting $scriptsZip to $scriptsStagingDir"
+  [IO.Compression.ZipFile]::ExtractToDirectory($scriptsZip, $scriptsStagingDir)
+  $scriptFiles = Get-ChildItem $scriptsStagingDir -Recurse -File -Include *.tpl
   $mapredFile = Get-ChildItem ([IO.Path]::Combine($current, $mapredFile.name)) -Include *.tpl
   $re = [regex] "\$\(([^)]+)\)"
   $replacer = { $vars[$args[0].Groups[1].Value] }
@@ -161,14 +161,20 @@ $result = Invoke-Command localhost {
   "Copying $($dbFile.name) to $dbDir"
   Copy-Item ([IO.Path]::Combine($current, $dbFile.name)) $dbDir
 
+  # copy scripts
+  "Copying $scriptsStagingDir to $workingDir"
+  Copy-Item -Exclude *.tpl -Recurse $scriptsStagingDir $workingDir
+
   # execute
   $commands = @(
     @{ path = ([IO.Path]::Combine($current, $jreFile.name)); 
        args = "/s" };
     @{ path = $locals.sql; 
-       args = ("/configurationfile={0}" -f [IO.Path]::Combine($current, $polybaseFile.name)) }; # TODO check if polybase already installed
+       args = ("/configurationfile={0}" -f [IO.Path]::Combine($current, $polybaseFile.name)) };
     @{ path = "sqlcmd";
-       args = ("-Q ""CREATE DATABASE AdventureWorks2012 ON (FILENAME='{0}') FOR ATTACH_REBUILD_LOG;""" -f [IO.Path]::Combine($dbDir, $dbFile.name)) }) # TODO check if db already loaded
+       args = ("-Q ""CREATE DATABASE AdventureWorks2012 ON (FILENAME='{0}') FOR ATTACH_REBUILD_LOG;""" -f [IO.Path]::Combine($dbDir, $dbFile.name)) };
+    @{ path = "sqlcmd";
+       args = ("-i $([IO.Path]:Combine($workingDir, "sql", "bootstrap", "setup.sql"))" })
   for ($i = 0; $i -lt $commands.Length; $i += 1) {
     $cmd = $commands[$i]
     "[ EXECUTING {0} {1}]" -f $cmd.path, $cmd.args
