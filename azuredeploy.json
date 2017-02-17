@@ -2,37 +2,25 @@
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "unique": {
+        "admin-username": {
             "type": "string",
-            "defaultValue": "[uniqueString(resourceGroup().id)]",
             "metadata": {
-                "description": "(Optional) A unique value that will be appended to each account-level resource created from this template. The default template expression will generate an appropriate random value."
+                "description": "User name used for the VM, SQL DW, and HDI."
             }
         },
-        "location": {
-            "type": "string",
-            "defaultValue": "East US"
-        },
-        "sql-vm-size": {
-            "type": "string",
-            "defaultValue": "Standard_DS12_v2"
-        },
-        "headnode-vm-size": {
-            "type": "string",
-            "defaultValue": "Standard_D3_v2"
-        },
-        "workernode-vm-size": {
-            "type": "string",
-            "defaultValue": "Standard_D3_v2"
-        },
-        "admin-username": {
-            "type": "string"
-        },
         "admin-password": {
-            "type": "securestring"
+            "type": "securestring",
+            "metadata": {
+                "description": "Password used for the VM, SQL DW, and HDI."
+            }
         }
     },
     "variables": {
+        "unique": "[uniqueString(resourceGroup().id)]",
+        "location": "[resourceGroup().location]",
+        "sql-vm-size": "Standard_DS12_v2",
+        "headnode-vm-size": "Standard_D3_v2",
+        "workernode-vm-size": "Standard_D3_v2",
         "storage-version": "2016-01-01",
         "virtual-machine-version": "2016-04-30-preview",
         "network-version": "2016-09-01",
