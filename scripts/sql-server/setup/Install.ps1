@@ -174,7 +174,7 @@ $result = Invoke-Command localhost {
     @{ path = "sqlcmd";
        args = ("-Q ""CREATE DATABASE AdventureWorks2012 ON (FILENAME='{0}') FOR ATTACH_REBUILD_LOG;""" -f [IO.Path]::Combine($dbDir, $dbFile.name)) };
     @{ path = "sqlcmd";
-       args = ("-i $([IO.Path]::Combine($workingDir, "sql", "bootstrap", "setup.sql"))" })
+       args = ("-i $([IO.Path]::Combine($workingDir, "sql", "bootstrap", "setup.sql"))") })
   for ($i = 0; $i -lt $commands.Length; $i += 1) {
     $cmd = $commands[$i]
     "[ EXECUTING {0} {1}]" -f $cmd.path, $cmd.args
