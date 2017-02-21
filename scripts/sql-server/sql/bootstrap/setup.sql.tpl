@@ -39,8 +39,8 @@ CREATE DATABASE SCOPED CREDENTIAL BlobStorageCredential WITH IDENTITY = '$(STORA
 
 CREATE EXTERNAL DATA SOURCE AzureBlob WITH (
   TYPE = HADOOP,
-  LOCATION = 'wasbs://$(STORAGE_CONTAINER_NAME)@$(STORAGE_ACCOUNT_KEY).blob.core.windows.net',
-  CREDENTIAL = AzureStorageCredential
+  LOCATION = 'wasbs://$(STORAGE_CONTAINER_NAME)@$(STORAGE_ACCOUNT_NAME).blob.core.windows.net',
+  CREDENTIAL = BlobStorageCredential
 );
 
 CREATE EXTERNAL TABLE Product_Blob (
@@ -70,7 +70,7 @@ CREATE EXTERNAL TABLE Product_Blob (
   rowguid NVARCHAR (255),
   ModifiedDate datetime
 )
-WITH (LOCATION='/product',
+WITH (LOCATION='/dv-demo-product',
   DATA_SOURCE = AzureBlob,
   FILE_FORMAT = CSVFormat
 );
