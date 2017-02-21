@@ -120,6 +120,7 @@ $result = Invoke-Command localhost {
   $dbDir = [IO.Path]::Combine($workingDir, 'db')
   $scriptsStagingDir = [IO.Path]::Combine($current, 'sql')
   $scriptsZip = [IO.Path]::Combine($current, $sqlScriptsFile.name)
+  $mapredStagingFile = [IO.Path]::Combine($current, $mapredFile.name)
 
   # download files
   $client = New-Object Net.Webclient
@@ -147,11 +148,10 @@ $result = Invoke-Command localhost {
   # environment vars
   "Extracting $scriptsZip to $scriptsStagingDir"
   [IO.Compression.ZipFile]::ExtractToDirectory($scriptsZip, $scriptsStagingDir)
-  $scriptFiles = Get-ChildItem $scriptsStagingDir -Recurse -File -Include *.tpl
-  $mapredFile = Get-ChildItem ([IO.Path]::Combine($current, $mapredFile.name)) -Include *.tpl
+  $templateFiles = Get-ChildItem $scriptsStagingDir,$mapredStagingFile -File -Recurse -Include *.tpl
   $re = [regex] "\$\(([^)]+)\)"
   $replacer = { $vars[$args[0].Groups[1].Value] }
-  ($scriptFiles + $mapredFile) | % {
+  $templateFiles | % {
     $name = $_.FullName.Replace(".tpl", [String]::Empty)
     "Setting vars in $name from $($_.FullName)"
     $_ | Get-Content | % { $re.Replace($_, $replacer) } | Out-File $name -Encoding ascii
