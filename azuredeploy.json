@@ -65,7 +65,14 @@
         "network-security-name": "[concat(variables('virtual-machine-name'), '-nsg')]",
         "network-security-id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('network-security-name'))]",
         "nic-name": "[concat(variables('virtual-machine-name'), '-nic')]",
-        "nic-id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nic-name'))]"
+        "nic-id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nic-name'))]",
+		
+        "sqldw-api-version": "2014-04-01-preview",
+        "sql-server-name": "[concat('sqlserver', variables('unique'))]",
+        "sqldw-name": "AdventureWorksSQLDW2012",
+        "sql-collation": "SQL_LATIN1_GENERAL_CP1_CI_AS",
+        "sql-requested-service": "DW100",
+		"sql-server-id": "[resourceId('Microsoft.Sql/servers/databases', variables('sql-server-name'), variables('sqldw-name'))]"
     },
     "resources": [
         {
@@ -145,6 +152,53 @@
                 }
             }
         },
+		
+        {
+            "type": "Microsoft.Sql/servers",
+            "name": "[variables('sql-server-name')]",
+            "location": "[variables('location')]",
+            "tags": {
+                "displayName": "SqlServer"
+            },
+            "apiVersion": "[variables('sqldw-api-version')]",
+            "properties": {
+                "administratorLogin": "[parameters('admin-username')]",
+                "administratorLoginPassword": "[parameters('admin-password')]",
+                "version": "12.0"
+            },
+            "resources": [
+                {
+                    "name": "[variables('sqldw-name')]",
+                    "type": "databases",
+                    "location": "[variables('location')]",
+                    "tags": {
+                        "displayName": "Data Warehouse"
+                    },
+                    "apiVersion": "[variables('sqldw-api-version')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('sql-server-name'))]"
+                    ],
+                    "properties": {
+                        "edition": "DataWarehouse",
+                        "collation": "[variables('sql-collation')]",
+                        "requestedServiceObjectiveName": "[variables('sql-requested-service')]"
+                    }
+                },
+                {
+                    "type": "firewallrules",
+                    "apiVersion": "[variables('sqldw-api-version')]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('sql-server-name'))]"
+                    ],
+                    "location": "[variables('location')]",
+                    "name": "AllowAllWindowsAzureIps",
+                    "properties": {
+                        "endIpAddress": "0.0.0.0",
+                        "startIpAddress": "0.0.0.0"
+                    }
+                }
+            ]
+        },
         
         {
             "type": "Microsoft.Compute/virtualMachines",
@@ -153,7 +207,8 @@
             "location": "[variables('location')]",
             "dependsOn": [
                 "[variables('nic-id')]",
-                "[variables('hdinsight-id')]"
+                "[variables('hdinsight-id')]",
+				"[variables('sql-server-id')]"
             ],
             "properties": {
                 "osProfile": {
