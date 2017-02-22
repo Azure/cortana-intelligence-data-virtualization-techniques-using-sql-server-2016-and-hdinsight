@@ -31,18 +31,17 @@ Param(
   
   [string]$PolyBaseConfig = "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf",
   
-  [string]$PolyBaseInstallConfigUri = "http://chstone.blob.core.windows.net/public/data-virtualization/PolyBase.ini",
+  [string]$PolyBaseInstallConfigUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/PolyBase.ini",
   
-  [string]$MapReduceConfigUri = "http://chstone.blob.core.windows.net/public/data-virtualization/mapred-site.xml.tpl",
+  [string]$MapReduceConfigUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/mapred-site.xml.tpl",
   
-  [string]$SqlScriptsUri = "http://chstone.blob.core.windows.net/public/data-virtualization/sql.zip",
+  [string]$SqlScriptsUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/sql.zip",
   
-  #[string]$AdventureWorksDbUri = "http://download-codeplex.sec.s-msft.com/Download/Release?ProjectName=msftdbprodsamples&DownloadId=165399&FileTime=129762331847030000&Build=21031",
-  [string]$AdventureWorksDbUri = "http://chstone.blob.core.windows.net/public/data-virtualization/AdventureWorks2012_Data.mdf",
+  [string]$AdventureWorksDbUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/AdventureWorks2012_Data.mdf",
     
-  [string]$JreUri = "http://chstone.blob.core.windows.net/public/data-virtualization/jre-8u121-windows-x64.exe"
+  [string]$JreUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/jre-8u121-windows-x64.exe"
 
-  [string]$AdventureWorksSQLDW2012Uri = "https://rbateststore.blob.core.windows.net/hdiscriptactions/AdventureWorksSQLDW2012.zip"
+  [string]$AdventureWorksSQLDW2012Uri = "https://bostondata.blob.core.windows.net/hdiscriptactions/AdventureWorksSQLDW2012.zip"
 )
 
 # RUN:
