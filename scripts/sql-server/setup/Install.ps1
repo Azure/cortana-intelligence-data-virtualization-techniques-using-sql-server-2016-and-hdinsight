@@ -20,6 +20,12 @@ Param(
   
   [Parameter(Mandatory=$True, Position=7)]
   [string]$HadoopHeadnodes,
+
+  [Parameter(Mandatory=$True, Position=8)]
+  [string]$SQLServer,
+
+  [Parameter(Mandatory=$True, Position=9)]
+  [string]$SQLDWDatabase,
   
   [string]$SQLInstaller = "C:\SQLServer_13.0_Full\setup.exe",
   
@@ -35,6 +41,8 @@ Param(
   [string]$AdventureWorksDbUri = "http://chstone.blob.core.windows.net/public/data-virtualization/AdventureWorks2012_Data.mdf",
     
   [string]$JreUri = "http://chstone.blob.core.windows.net/public/data-virtualization/jre-8u121-windows-x64.exe"
+
+  [string]$AdventureWorksSQLDW2012Uri = "https://rbateststore.blob.core.windows.net/hdiscriptactions/AdventureWorksSQLDW2012.zip"
 )
 
 # RUN:
@@ -85,7 +93,9 @@ $vars = @{
   HDI_PASSWORD = $AdminPassword;
   HDI_NAMENODE_HOST = $hadoopNamenode;
   HDI_RESOURCE_MANAGER_HOST = $hadoopResourceManager;
-  HDP_VERSION = $hadoopVersion; }
+  HDP_VERSION = $hadoopVersion;
+  SQL_SERVER = $SQLServer;
+  SQLDW_DATABASE = $SQLDWDatabase; }
 $locals = @{
   sql = "C:\SQLServer_13.0_Full\setup.exe";
   polybase = "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf"; }
@@ -94,7 +104,8 @@ $uris = @{
   mapred = $MapReduceConfigUri;
   scripts = $SqlScriptsUri;
   db = $AdventureWorksDbUri;
-  jre = $JreUri; }
+  jre = $JreUri;
+  awsqldw = $AdventureWorksSQLDW2012Uri; }
 
 # run as admin
 $result = Invoke-Command localhost {
@@ -106,6 +117,11 @@ $result = Invoke-Command localhost {
   "Current user: {0}" -f (& whoami)
   "Environment"; $vars.GetEnumerator() | % { "{0}: {1}" -f $_.Name, $_.Value }
 
+  $sqlServer = $vars.Item("SQL_SERVER")
+  $sqlUser = $vars.Item("HDI_USERNAME")
+  $sqlPassword = $vars.Item("HDI_PASSWORD")
+  $sqldwDatabase = $vars.Item("SQLDW_DATABASE")
+
   # required for unzip
   Add-Type -Assembly "System.IO.Compression.FileSystem"
 
@@ -116,11 +132,14 @@ $result = Invoke-Command localhost {
   $sqlScriptsFile = @{ name = "sql.zip"; uri = $uris.scripts; hash = "71E9C789D4C0AE083205A885DFB56098" }
   $dbFile = @{ name = "AdventureWorks2012_Data.mdf"; uri = $uris.db; hash = "C3E2FFA06302694203DDADB52A8C00B1" }
   $jreFile = @{ name = "jre-8u121-windows-x64.exe"; uri = $uris.jre; hash = "A963C6B8A012E658A3D657C4897CF7C8" }
+  $awsqldwFile = @{ name = "AdventureWorksSQLDW2012.zip"; uri = $uris.awsqldw; hash = "998EAFD464937B2D8A809E7B51AD3188" }
   $workingDir = "C:\Tutorial"
   $dbDir = [IO.Path]::Combine($workingDir, 'db')
   $scriptsStagingDir = [IO.Path]::Combine($current, 'sql')
   $scriptsZip = [IO.Path]::Combine($current, $sqlScriptsFile.name)
   $mapredStagingFile = [IO.Path]::Combine($current, $mapredFile.name)
+  $awsqldwDir = [IO.Path]::Combine($workingDir, 'AdventureWorksSQLDW2012')
+  $awsqldwZip = [IO.Path]::Combine($current, $awsqldwFile.name)
 
   # download files
   $client = New-Object Net.Webclient
@@ -141,6 +160,10 @@ $result = Invoke-Command localhost {
   # create working dir
   "Creating $workingDir"
   New-Item $workingDir -Type Directory
+
+  # extract AdventureWorksSQLDW2012
+  "Extracting $awsqldwZip to $awsqldwDir"
+  [IO.Compression.ZipFile]::ExtractToDirectory($awsqldwZip, $awsqldwDir)
 
   "Creating $dbDir"
   New-Item $dbDir -Type Directory
@@ -173,6 +196,8 @@ $result = Invoke-Command localhost {
        args = ("/configurationfile={0}" -f [IO.Path]::Combine($current, $polybaseFile.name)) };
     @{ path = "sqlcmd";
        args = ("-Q ""CREATE DATABASE AdventureWorks2012 ON (FILENAME='{0}') FOR ATTACH_REBUILD_LOG;""" -f [IO.Path]::Combine($dbDir, $dbFile.name)) };
+    @{ path = ([IO.Path]::Combine($awsqldwDir, "aw_create.bat"));
+       args = ("$sqlServer $sqlUser $sqlPassword $sqldwDatabase $awsqldwDir") };
     @{ path = "sqlcmd";
        args = ("-i $([IO.Path]::Combine($workingDir, "sql", "bootstrap", "setup.sql"))") })
   for ($i = 0; $i -lt $commands.Length; $i += 1) {
