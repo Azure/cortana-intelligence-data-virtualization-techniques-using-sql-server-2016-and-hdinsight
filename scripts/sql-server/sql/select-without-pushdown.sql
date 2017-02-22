@@ -1,3 +1,5 @@
+USE AdventureWorks2012;
+
 SELECT
   p.ProductID,
   p.Name ProductName,
