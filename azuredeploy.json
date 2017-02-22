@@ -66,9 +66,10 @@
         "network-security-id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('network-security-name'))]",
         "nic-name": "[concat(variables('virtual-machine-name'), '-nic')]",
         "nic-id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nic-name'))]",
-		
+				
         "sqldw-api-version": "2014-04-01-preview",
         "sql-server-name": "[concat('sqlserver', variables('unique'))]",
+		"sql-server-uri": "[concat(variables('sql-server-name'),'.database.windows.net')]",
         "sqldw-name": "AdventureWorksSQLDW2012",
         "sql-collation": "SQL_LATIN1_GENERAL_CP1_CI_AS",
         "sql-requested-service": "DW100",
@@ -316,9 +317,9 @@
                         "type": "CustomScriptExtension",
                         "typeHandlerVersion": "1.8",
                         "autoUpgradeMinorVersion": true,
-                        "settings": {
-                            "fileUris": [ "[variables('vm-ext-dv-uri')]" ],
-                            "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', variables('vm-ext-dv-script'), ' ', parameters('admin-password'), ' ', variables('storage-account-name'), ' ', listKeys(variables('storage-account-id'), variables('storage-version')).keys[0].value, ' ', variables('polybase-storage-container'), ' ', parameters('admin-username'), ' ', parameters('admin-password'), ' ', concat(variables('hdinsight-headnode-0'), '.', reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix), ',', concat(variables('hdinsight-headnode-1'), '.', reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix))]"
+                        "settings": {							
+							"fileUris": [ "[variables('vm-ext-dv-uri')]" ],
+                            "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File ', variables('vm-ext-dv-script'), ' ', parameters('admin-password'), ' ', variables('storage-account-name'), ' ', listKeys(variables('storage-account-id'), variables('storage-version')).keys[0].value, ' ', variables('polybase-storage-container'), ' ', parameters('admin-username'), ' ', parameters('admin-password'), ' ', concat(variables('hdinsight-headnode-0'), '.', reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix), ',', concat(variables('hdinsight-headnode-1'), '.', reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix), ' ', variables('sql-server-uri'), ' ', variables('sqldw-name'))]"
                         }
                     }
                 }
