@@ -39,9 +39,9 @@ Param(
   
   [string]$AdventureWorksDbUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/AdventureWorks2012_Data.mdf",
     
-  [string]$JreUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/jre-8u121-windows-x64.exe"
+  [string]$JreUri = "http://bostondata.blob.core.windows.net/edw-data-virtualization/jre-8u121-windows-x64.exe",
 
-  [string]$AdventureWorksSQLDW2012Uri = "https://bostondata.blob.core.windows.net/hdiscriptactions/AdventureWorksSQLDW2012.zip"
+  [string]$AdventureWorksSQLDW2012Uri = "https://bostondata.blob.core.windows.net/edw-data-virtualization/AdventureWorksSQLDW2012.zip"
 )
 
 # RUN:
