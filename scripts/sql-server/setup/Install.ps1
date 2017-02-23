@@ -142,7 +142,7 @@ $result = Invoke-Command localhost {
 
   # download files
   $client = New-Object Net.Webclient
-  @($polybaseFile; $mapredFile; $sqlScriptsFile; $dbFile; $jreFile).GetEnumerator() | % {
+  @($polybaseFile; $mapredFile; $sqlScriptsFile; $dbFile; $jreFile; $awsqldwFile).GetEnumerator() | % {
     $dest = [IO.Path]::Combine($current, $_.name)
     if (!(Test-Path $dest -Type Leaf) -or ((Get-FileHash $dest -Algorithm $fileHashAlgo | select -ExpandProperty Hash) -ne $_.hash)) {
       "[ DOWNLOADING {0} to {1}" -f $_.uri, $dest
