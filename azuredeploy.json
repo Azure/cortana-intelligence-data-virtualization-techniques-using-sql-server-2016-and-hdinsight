@@ -368,7 +368,7 @@
                             "virtualNetworkProfile": "[variables('hdinsight-vnet-profile')]",
                             "scriptActions": [
                                  {"name":"Copy HDP to DFS", "uri":"[variables('hdinsight-script-hdp')]"},
-                                 {"name":"Copy Spark Notebook to WASB", "uri":"[variables('hdinsight-script-spark')]", "parameters":"[concat(variables('sql-server-name'), ' ', parameters('admin-username'), ' ', parameters('admin-password'), ' ', variables('sqldw-name'), ' ', variables('hdinsight-notebook-spark')]" }
+                                 {"name":"Copy Spark Notebook to WASB", "uri":"[variables('hdinsight-script-spark')]", "parameters":"[concat(variables('sql-server-name'), ' ', parameters('admin-username'), ' ', parameters('admin-password'), ' ', variables('sqldw-name'), ' ', variables('hdinsight-notebook-spark'))]" }
                             ]
                         },
                         {
