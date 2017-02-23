@@ -40,7 +40,9 @@
         "hdinsight-workernode-count": 2,
         "hdinsight-headnode-0": "[concat('hn0-', take(variables('hdinsight-name'), 6))]",
         "hdinsight-headnode-1": "[concat('hn1-', take(variables('hdinsight-name'), 6))]",
-        "hdinsight-script-uri": "http://bostondata.blob.core.windows.net/edw-data-virtualization/copyhdpdir.sh",
+        "hdinsight-script-hdp": "http://bostondata.blob.core.windows.net/edw-data-virtualization/copyhdpdir.sh",
+        "hdinsight-script-spark": "http://bostondata.blob.core.windows.net/edw-data-virtualization/copy-spark-notebook.sh",
+        "hdinsight-notebook-spark": "http://bostondata.blob.core.windows.net/edw-data-virtualization/Spark%20-%20Join%20DW%20with%20WASB.tpl",
         "storage-account-name": "[concat(variables('prefix'), 'stor', variables('unique'))]",
         "storage-account-id": "[resourceId('Microsoft.Storage/storageAccounts', variables('storage-account-name'))]",
         "storage-sku": "Standard_LRS",
@@ -158,9 +160,6 @@
             "type": "Microsoft.Sql/servers",
             "name": "[variables('sql-server-name')]",
             "location": "[variables('location')]",
-            "tags": {
-                "displayName": "SqlServer"
-            },
             "apiVersion": "[variables('sqldw-api-version')]",
             "properties": {
                 "administratorLogin": "[parameters('admin-username')]",
@@ -368,7 +367,8 @@
                             "osProfile": "[variables('hdinsight-os-profile')]",
                             "virtualNetworkProfile": "[variables('hdinsight-vnet-profile')]",
                             "scriptActions": [
-                                 {"name":"Copy HDP to DFS", "uri":"[variables('hdinsight-script-uri')]"}
+                                 {"name":"Copy HDP to DFS", "uri":"[variables('hdinsight-script-hdp')]"},
+                                 {"name":"Copy Spark Notebook to WASB", "uri":"[variables('hdinsight-script-spark')]", "parameters":"[concat(variables('sql-server-name'), ' ', parameters('admin-username'), ' ', parameters('admin-password'), ' ', variables('sqldw-name'), ' ', variables('hdinsight-notebook-spark')]" }
                             ]
                         },
                         {
@@ -411,10 +411,6 @@
         "dnsSettings": {
             "type": "string",
             "value": "[reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix]"
-        },
-        "script": {
-            "type": "string",
-            "value": "[concat('powershell -ExecutionPolicy Unrestricted -File ', variables('vm-ext-dv-script'), ' ', parameters('admin-password'), ' ', variables('storage-account-name'), ' ', listKeys(variables('storage-account-id'), variables('storage-version')).keys[0].value, ' ', variables('polybase-storage-container'), ' ', parameters('admin-username'), ' ', parameters('admin-password'), ' ', concat(variables('hdinsight-headnode-0'), '.', reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix), ',', concat(variables('hdinsight-headnode-1'), '.', reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix))]"
         }
     }
 }

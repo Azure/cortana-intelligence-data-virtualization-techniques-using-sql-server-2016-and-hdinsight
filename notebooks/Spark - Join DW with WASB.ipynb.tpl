@@ -11,7 +11,7 @@
 	}, {
 		"execution_count": null,
 		"cell_type": "code",
-		"source": "val server = \"$(TEMP_SERVER)\"\nval user = \"$(TEMP_USER)\"\nval password = \"$(TEMP_PASSWORD)\"\nval url = s\"jdbc:sqlserver://$server.database.windows.net:1433;database=AdventureWorksSQLDW2012;user=$user;password=$password\"",
+		"source": "val server = \"$AZURE_SQL_SERVER\"\nval user = \"$ADMIN_USERNAME\"\nval password = \"$ADMIN_PASSWORD\"\nval database = \"$AZURE_SQL_DB\"\nval url = s\"jdbc:sqlserver://$server.database.windows.net:1433;database=$database;user=$user;password=$password\"",
 		"outputs": [],
 		"metadata": {
 			"collapsed": false
