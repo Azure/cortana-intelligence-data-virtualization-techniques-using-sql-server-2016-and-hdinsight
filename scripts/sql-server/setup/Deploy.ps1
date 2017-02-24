@@ -69,6 +69,7 @@ $client = New-Object Net.Webclient
   storageKey = $StorageKey;
   storageContainer = $StorageContainer;
   adminUser = $AdminUser;
+  adminPassword = $AdminPassword;
   hadoopHeadnodes = $HadoopHeadnodes;
   sqlServer = $SQLServer;
   sqlDWDatabase = $SQLDWDatabase;
