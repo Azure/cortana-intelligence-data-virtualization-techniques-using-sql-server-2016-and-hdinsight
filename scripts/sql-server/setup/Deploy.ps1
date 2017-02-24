@@ -64,23 +64,25 @@ Start-Transcript -Path C:\Windows\Temp\dv-deploy.log
 $client = New-Object Net.Webclient
 
 @{
-  MasterKey = $MasterKey;
-  StorageAccount = $StorageAccount;
-  StorageKey = $StorageKey;
-  StorageContainer = $StorageContainer;
-  AdminUser = $AdminUser;
-  AdminPassword = $AdminPassword;
-  HadoopHeadnodes = $HadoopHeadnodes;
-  SqlServer = $SQLServer;
-  SqlDWDatabase = $SQLDWDatabase;
-  SqlInstaller = $SQLInstaller;
-  PolybaseConfigDir = $PolyBaseConfig;
-  PolybaseConfigUri = $PolyBaseInstallConfigUri;
-  MapReduceConfigUri = $MapReduceConfigUri;
-  SqlScriptsUri = $SqlScriptsUri;
-  AdventureWorksUri = $AdventureWorksDbUri;
-  JreUri = $JreUri;
-  AdventureWorksDWUri = $AdventureWorksSQLDW2012Uri;
+  MASTER_KEY = $MasterKey;
+  STORAGE_ACCOUNT_NAME = $StorageAccount;
+  STORAGE_ACCOUNT_KEY = $StorageKey;
+  STORAGE_CONTAINER_NAME = $StorageContainer;
+  ADMIN_USER = $AdminUser;
+  ADMIN_PASSWORD = $AdminPassword;
+  HDI_USERNAME = $AdminUser;
+  HDI_PASSWORD = $AdminPassword;
+  hadoopHeadnodes = $HadoopHeadnodes;
+  sqlServer = $SQLServer;
+  sqlDWDatabase = $SQLDWDatabase;
+  sqlInstaller = $SQLInstaller;
+  polybaseConfigDir = $PolyBaseConfig;
+  polybaseConfigUri = $PolyBaseInstallConfigUri;
+  mapReduceConfigUri = $MapReduceConfigUri;
+  sqlScriptsUri = $SqlScriptsUri;
+  adventureWorksUri = $AdventureWorksDbUri;
+  jreUri = $JreUri;
+  adventureWorksDWUri = $AdventureWorksSQLDW2012Uri;
 } | ConvertTo-Json | Out-File $ENV_PATH -Encoding ascii
 
 $client.DownloadFile($InstallScript, $TEMP_INSTALL_PATH)
