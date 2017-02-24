@@ -100,12 +100,12 @@ $tutorialDir = "C:\Tutorial"
 Get-ChildItem $tutorialDir -exclude Setup,Install.ps1 -Recurse | Remove-Item -Force -Recurse
 
 $files = @{
-  polybase = @{ name="PolyBase.ini"; uri=$vars.polybaseConfigUri; dest="." };
-  mapred = @{ name="mapred-site.xml.tpl"; uri=$vars.mapReduceConfigUri; dest="templates" };
-  adventureWorks = @{ name="AdventureWorks2012_Data.mdf"; uri=$vars.adventureWorksUri; dest=([IO.Path]::Combine($tutorialDir, "db")) };
-  jre = @{ name="jre-8u121-windows-x64.exe"; uri=$vars.jreUri; dest="." };
-  sql = @{ name="sql.zip"; uri=$vars.sqlScriptsUri; dest="templates" };
-  adventureWorksDW = @{ name="AdventureWorksSQLDW2012.zip"; uri=$vars.adventureWorksDWUri; dest="." } }
+  polybase = @{ name="PolyBase.ini"; uri=$vars.PolybaseConfigUri; dest="." };
+  mapred = @{ name="mapred-site.xml.tpl"; uri=$vars.MapReduceConfigUri; dest="templates" };
+  adventureWorks = @{ name="AdventureWorks2012_Data.mdf"; uri=$vars.AdventureWorksUri; dest=([IO.Path]::Combine($tutorialDir, "db")) };
+  jre = @{ name="jre-8u121-windows-x64.exe"; uri=$vars.JreUri; dest="." };
+  sql = @{ name="sql.zip"; uri=$vars.SqlScriptsUri; dest="templates" };
+  adventureWorksDW = @{ name="AdventureWorksSQLDW2012.zip"; uri=$vars.AdventureWorksDWUri; dest="." } }
 
 $files.Values | % {
   $_.dir = Get-DestinationPath $_.dest $currentDir
@@ -148,14 +148,14 @@ Copy-Item $files.sql.extractTo ([IO.Path]::Combine($tutorialDir, "sql")) -Exclud
   @{  path = $files.jre.path;
       args = "/s" };
 
-  @{  path = $vars.sqlInstaller; 
+  @{  path = $vars.SqlInstaller; 
       args = ("/configurationfile={0}" -f $files.polybase.path) };
 
   @{  path = "sqlcmd";
       args = ("-Q ""CREATE DATABASE AdventureWorks2012 ON (FILENAME='{0}') FOR ATTACH_REBUILD_LOG;""" -f $files.adventureWorks.path) };
 
   @{  path = ([IO.Path]::Combine($files.adventureWorksDW.extractTo, "aw_create.bat"));
-      args = [string]::Join(" ", ($vars.sqlServer, $vars.adminUser, $vars.adminPassword, $vars.sqlDWDatabase, $files.adventureWorksDW.extractTo)) };
+      args = [string]::Join(" ", ($vars.SqlServer, $vars.AdminUser, $vars.AdminPassword, $vars.SqlDWDatabase, $files.adventureWorksDW.extractTo)) };
 
   @{  path = "sqlcmd";
       args = ("-i {0}" -f [IO.Path]::Combine($tutorialDir, "sql", "bootstrap", "setup.sql")) } 
@@ -169,7 +169,7 @@ Copy-Item $files.sql.extractTo ([IO.Path]::Combine($tutorialDir, "sql")) -Exclud
 
 # copy polybase config
 "Copying MapRed config" | Write-Verbose
-Copy-Item ($files.mapred.path.Replace(".tpl", [String]::Empty)) $vars.polybaseConfigDir
+Copy-Item ($files.mapred.path.Replace(".tpl", [String]::Empty)) $vars.PolybaseConfigDir
 
 # restart polybase
 "Restarting PolyBase" | Write-Verbose
