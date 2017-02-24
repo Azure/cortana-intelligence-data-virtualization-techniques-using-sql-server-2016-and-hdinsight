@@ -42,7 +42,7 @@
         "hdinsight-headnode-1": "[concat('hn1-', take(variables('hdinsight-name'), 6))]",
         "hdinsight-script-hdp": "http://bostondata.blob.core.windows.net/edw-data-virtualization/copyhdpdir.sh",
         "hdinsight-script-spark": "http://bostondata.blob.core.windows.net/edw-data-virtualization/copy-spark-notebook.sh",
-        "hdinsight-notebook-spark": "http://bostondata.blob.core.windows.net/edw-data-virtualization/Spark%20-%20Join%20DW%20with%20WASB.tpl",
+        "hdinsight-notebook-spark": "http://bostondata.blob.core.windows.net/edw-data-virtualization/Spark%20-%20Join%20DW%20with%20WASB.ipynb.tpl",
         "storage-account-name": "[concat(variables('prefix'), 'stor', variables('unique'))]",
         "storage-account-id": "[resourceId('Microsoft.Storage/storageAccounts', variables('storage-account-name'))]",
         "storage-sku": "Standard_LRS",
