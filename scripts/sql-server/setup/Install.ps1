@@ -28,8 +28,8 @@ function Get-PrimaryResourceManager([string]$hosts, [int]$port = 8088) {
   }
 }
 
-function Get-HadoopVersion([string]$hadoopNamenode, [int]$port) {
-  $info = $client.DownloadString("http://$($hadoopNamenode):$NAMENODE_PORT/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo") | ConvertFrom-Json
+function Get-HadoopVersion([string]$hadoopNamenode, [int]$port = 30070) {
+  $info = $client.DownloadString("http://$($hadoopNamenode):$port/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo") | ConvertFrom-Json
   return [String]::Join(".", $info.beans[0].SoftwareVersion.split(".")[-4..-1])
 }
 
