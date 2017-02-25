@@ -5,13 +5,13 @@
         "admin-username": {
             "type": "string",
             "metadata": {
-                "description": "User name used for the VM, SQL DW, and HDI."
+                "description": "Admin user name (used for all services - e.g. HDInsight, the VM, and Azure SQL DW)"
             }
         },
         "admin-password": {
             "type": "securestring",
             "metadata": {
-                "description": "Password used for the VM, SQL DW, and HDI."
+                "description": "Admin password (used for all services - e.g. HDInsight, the VM, and Azure SQL DW)"
             }
         }
     },
