@@ -89,8 +89,11 @@ function Remove-DirIfExists([string]$path) {
 }
 
 $vars = Get-Vars;
-$currentDir = [IO.Path]::GetFullPath($pwd)
+# $currentDir = [IO.Path]::GetFullPath($pwd)
+$currentDir = "C:\Windows\Temp\DV"
 $tutorialDir = "C:\Tutorial"
+
+Create-DirIfNotExists $currentDir
 
 Get-ChildItem $tutorialDir -exclude Setup,Install.ps1 -Recurse | Remove-Item -Force -Recurse
 
