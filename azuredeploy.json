@@ -36,8 +36,8 @@
             "id": "[variables('vnet-id')]",
             "subnet": "[variables('vnet-subnet-1-id')]"
         },
-        "hdinsight-headnode-count": 4,
-        "hdinsight-workernode-count": 2,
+        "hdinsight-headnode-count": 2,
+        "hdinsight-workernode-count": 4,
         "hdinsight-headnode-0": "[concat('hn0-', take(variables('hdinsight-name'), 6))]",
         "hdinsight-headnode-1": "[concat('hn1-', take(variables('hdinsight-name'), 6))]",
         "hdinsight-script-hdp": "http://bostondata.blob.core.windows.net/edw-data-virtualization/copyhdpdir.sh",
