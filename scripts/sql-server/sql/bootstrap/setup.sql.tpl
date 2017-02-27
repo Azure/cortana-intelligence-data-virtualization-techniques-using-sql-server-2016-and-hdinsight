@@ -124,3 +124,92 @@ SELECT
   * 
 FROM 
   Production.Product;
+  
+-- Create a larger version of the Product table locally (BigProduct), and a corresponding table in HDI (BigProduct_HDFS),
+-- to demonstrate faster execution with Polybase AdventureWorks schema: https://technet.microsoft.com/en-us/library/ms124719(v=sql.100).aspx.
+-- 40 million rows as below are added. Note that the ProductID is 41, which is less than cutoff of 50 as specified in the demo SQL,
+-- so the result set from HDI will be small.
+-- 41','Lock Washer 12','LW-5800','0','0','','1000','750','0.0000','0.0000','','','','','0','','','','','',
+-- '2002-06-01 00:00:00.000','','','7BC9D58E-3E62-481F-8343-BEB0883B3ECF','2008-03-11 10:01:36.827
+WITH
+  L0   AS (SELECT c FROM (SELECT 1 UNION ALL SELECT 1) AS D(c)), -- 2^1
+  L1   AS (SELECT 1 AS c FROM L0 AS A CROSS JOIN L0 AS B),       -- 2^2
+  L2   AS (SELECT 1 AS c FROM L1 AS A CROSS JOIN L1 AS B),       -- 2^4
+  L3   AS (SELECT 1 AS c FROM L2 AS A CROSS JOIN L2 AS B),       -- 2^8
+  L4   AS (SELECT 1 AS c FROM L3 AS A CROSS JOIN L3 AS B),       -- 2^16
+  L5   AS (SELECT 1 AS c FROM L4 AS A CROSS JOIN L4 AS B),       -- 2^32
+  Nums AS (SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS k FROM L5)
+SELECT
+	CAST(41 AS INT) AS ProductID,
+	CAST('Lock Washer 12' AS NVARCHAR(50)) AS Name,
+	CAST('LW-5800' AS NVARCHAR(25)) AS ProductNumber,
+	CAST(0 AS BIT) AS MakeFlag,
+	CAST(0 AS BIT) AS FinishedGoodsFlag,
+	CAST('' AS NVARCHAR(15)) AS Color,
+	CAST(1000 AS SMALLINT) AS SafetyStockLevel,
+	CAST(750 AS SMALLINT) AS ReorderPoint,
+	CAST(0.0000 AS MONEY) AS StandardCost,
+	CAST(0.0000 AS MONEY) AS ListPrice,
+	CAST('' AS NVARCHAR(5)) AS Size,
+	CAST('' AS NCHAR(3)) AS SizeUnitMeasureCode,
+	CAST('' AS NCHAR(3)) AS WeightUnitMeasureCode,
+	CAST(0 AS DECIMAL(8,2)) AS Weight,
+	CAST(0 AS INT) AS DaysToManufacture,
+	CAST('' AS NCHAR(2)) AS ProductLine,
+	CAST('' AS NCHAR(2)) AS Class,
+	CAST('' AS NCHAR(2)) AS Style,
+	CAST('' AS INT) AS ProductSubcategoryID,
+	CAST('' AS INT) AS ProductModelID,
+	CAST('2002-06-01 00:00:00.000' AS DATETIME) AS SellStartDate,
+	CAST('' AS DATETIME) AS SellEndDate,
+	CAST('' AS DATETIME) AS DiscontinuedDate,
+	CAST('7BC9D58E-3E62-481F-8343-BEB0883B3ECF' AS NVARCHAR(255)) AS rowguid,
+	CAST('2008-03-11 10:01:36.827' AS DATETIME) AS ModifiedDate
+	INTO Production.BigProduct
+FROM nums
+WHERE k <= 40000000
+
+INSERT INTO
+	Production.BigProduct
+SELECT
+	*
+FROM Production.Product;
+
+CREATE EXTERNAL TABLE Production.BigProduct_HDFS (
+  ProductID INT,
+  Name NVARCHAR(50),
+  ProductNumber nvarchar(25),
+  MakeFlag BIT,
+  FinishedGoodsFlag BIT,
+  Color NVARCHAR(15),
+  SafetyStockLevel smallint,
+  ReorderPoint smallint,
+  StandardCost money,
+  ListPrice money,
+  Size NVARCHAR(5) ,
+  SizeUnitMeasureCode NCHAR(3) ,
+  WeightUnitMeasureCode NCHAR(3),
+  Weight decimal(8, 2),
+  DaysToManufacture int,
+  ProductLine NCHAR(2),
+  Class NCHAR(2),
+  Style NCHAR(2),
+  ProductSubcategoryID int,
+  ProductModelID int,
+  SellStartDate datetime,
+  SellEndDate datetime ,
+  DiscontinuedDate datetime,
+  rowguid NVARCHAR (255),
+  ModifiedDate datetime
+)
+WITH (LOCATION='/bigproduct',
+  DATA_SOURCE = HDInsight,
+  FILE_FORMAT = PipeFormat
+);
+
+INSERT INTO 
+  Production.BigProduct_HDFS 
+SELECT
+  * 
+FROM 
+  Production.BigProduct;

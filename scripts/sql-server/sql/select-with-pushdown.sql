@@ -1,5 +1,8 @@
 USE AdventureWorks2012;
 
+DBCC FREEPROCCACHE;
+DBCC DROPCLEANBUFFERS;
+
 SELECT
   p.ProductID,
   p.Name ProductName,
@@ -9,7 +12,7 @@ SELECT
   p.SellEndDate,
   ((d.OrderQty * d.UnitPrice) * (1.0 - d.UnitPriceDiscount)) TotalSalesAmt
 FROM
-  dbo.Product_HDFS p
+  Production.BigProduct_HDFS p
 RIGHT JOIN
   Sales.SalesOrderDetail d 
   ON p.ProductID = d.ProductID
