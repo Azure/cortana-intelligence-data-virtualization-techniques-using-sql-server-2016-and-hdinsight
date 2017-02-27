@@ -52,6 +52,11 @@ Param(
   [string]$InstallScript = "https://bostondata.blob.core.windows.net/edw-data-virtualization/Install.ps1"
 )
 
+function New-Credential([string]$username, [string]$password) {
+  $securepw = ConvertTo-SecureString $password -AsPlainText -Force
+  return New-Object Management.Automation.PSCredential("$env:COMPUTERNAME\$username", $securepw)
+}
+
 $ENV_PATH = "C:\Windows\Temp\dv-env.json"
 $TEMP_INSTALL_PATH = "C:\Windows\Temp\Install.ps1"
 $SETUP_DIR = "C:\Tutorial\Setup"
@@ -92,5 +97,13 @@ if (! (Test-Path $SETUP_DIR)) {
 }
 
 Copy-Item $TEMP_INSTALL_PATH $SETUP_DIR
+
+Invoke-Command localhost {
+  $ws = New-Object -ComObject WScript.Shell
+  $shortcut = $ws.CreateShortcut("$home\desktop\Setup - Data Virtualization.lnk")
+  $shortcut.TargetPath = "powershell"
+  $shortcut.Arguments = "-ExecutionPolicy Unrestricted -File C:\Tutorial\Setup\Install.ps1"
+  $shortcut.Save()
+} -Credential (New-Credential $AdminUser $AdminPassword)
 
 Stop-Transcript

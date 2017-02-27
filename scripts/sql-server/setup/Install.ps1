@@ -33,11 +33,6 @@ function Get-HadoopVersion([string]$hadoopNamenode, [int]$port = 30070) {
   return [String]::Join(".", $info.beans[0].SoftwareVersion.split(".")[-4..-1])
 }
 
-function New-Credential([string]$username, [string]$password) {
-  $securepw =  ConvertTo-SecureString $password -AsPlainText -Force
-  return New-Object Management.Automation.PSCredential("$env:COMPUTERNAME\$username", $securepw)
-}
-
 function Get-Vars([string]$path = "C:\Windows\Temp\dv-env.json") {
   return ConvertFrom-PSObject (Get-Content $path | ConvertFrom-Json)
 }
