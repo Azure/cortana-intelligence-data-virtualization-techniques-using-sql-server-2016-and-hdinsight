@@ -155,7 +155,7 @@ Copy-Item $files.sql.extractTo ([IO.Path]::Combine($tutorialDir, "sql")) -Exclud
       args = ("-Q ""CREATE DATABASE AdventureWorks2012 ON (FILENAME='{0}') FOR ATTACH_REBUILD_LOG;""" -f $files.adventureWorks.path) };
 
   @{  path = ([IO.Path]::Combine($files.adventureWorksDW.extractTo, "aw_create.bat"));
-      args = [string]::Join(" ", ($vars.sqlServer, $vars.adminUser, $vars.adminPassword, $vars.sqlDWDatabase, $files.adventureWorksDW.extractTo)) };
+      args = [string]::Join(" ", ($vars.sqlServer, $vars.ADMIN_USER, $vars.ADMIN_PASSWORD, $vars.sqlDWDatabase, $files.adventureWorksDW.extractTo)) };
 
   @{  path = "sqlcmd";
       args = ("-i {0}" -f [IO.Path]::Combine($tutorialDir, "sql", "bootstrap", "setup.sql")) } 
