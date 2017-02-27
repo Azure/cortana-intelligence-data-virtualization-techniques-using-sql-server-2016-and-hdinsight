@@ -385,6 +385,18 @@
         }
     ],
     "outputs": {
+        "VirtualMachineIP": {
+            "type":"string",
+            "value":"[reference(variables('public-ip-id'), variables('network-version')).ipAddress]"
+        },
+        "VirtualMachinePortalUri": {
+            "type":"string",
+            "value":"[concat('https://portal.azure.com/#resource', resourceGroup().id, '/providers/Microsoft.Compute/virtualMachines/', variables('virtual-machine-name'), '/overview')]"
+        },
+        "JupyterNotebookUri": {
+            "type":"string",
+            "value":"[concat('https://', variables('hdinsight-name'), '.azurehdinsight.net/jupyter/tree')]"
+        },
         "VM": {
             "type": "object",
             "value": "[reference(variables('virtual-machine-id'), variables('virtual-machine-version'))]"
