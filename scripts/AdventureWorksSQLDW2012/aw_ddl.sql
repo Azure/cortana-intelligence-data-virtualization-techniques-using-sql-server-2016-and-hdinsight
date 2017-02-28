@@ -449,3 +449,23 @@ FROM $(schema).FactInternetSales AS FIS
        ON FIS.OrderDateKey = DD.DateKey
        JOIN $(schema).DimGeography AS DG 
               ON DC.GeographyKey = DG.GeographyKey;
+			  
+-- Creating Historical Sales Data as View (ie, Avoid materializing the results)
+CREATE VIEW $(schema).SalesFromPastYears
+AS
+SELECT
+    a.ProductKey,
+    SalesOrderNumber
+    ,SalesOrderLineNumber
+    ,p.EnglishProductName as ProductName
+    ,st.SalesTerritoryCountry
+    ,OrderQuantity
+    ,UnitPrice
+    ,ExtendedAmount
+    ,SalesAmount
+    ,(convert(date, CAST(OrderDateKey as varchar))) AS [OrderDate]
+FROM $(schema).[FactInternetSales] a
+inner join $(schema).DimProduct p on a.ProductKey = p.ProductKey
+inner join $(schema).DimSalesTerritory st
+on st.SalesTerritoryKey = a.SalesTerritoryKey
+where year(convert(date, CAST(OrderDateKey as varchar))) < 2015;
