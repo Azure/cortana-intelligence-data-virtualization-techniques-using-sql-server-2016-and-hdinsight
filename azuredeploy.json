@@ -64,7 +64,7 @@
         "vnet-subnet-1-prefix": "10.5.1.0/24",
         "public-ip-name": "[concat(variables('virtual-machine-name'), '-ip')]",
         "public-ip-id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('public-ip-name'))]",
-        "public-ip-type": "dynamic",
+        "public-ip-dns": "[concat(variables('virtual-machine-name'), '-', variables('unique'))]",
         "network-security-name": "[concat(variables('virtual-machine-name'), '-nsg')]",
         "network-security-id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('network-security-name'))]",
         "nic-name": "[concat(variables('virtual-machine-name'), '-nic')]",
@@ -111,7 +111,10 @@
             "apiVersion": "[variables('network-version')]",
             "location": "[variables('location')]",
             "properties": {
-                "publicIpAllocationMethod": "[variables('public-ip-type')]"
+                "publicIpAllocationMethod": "static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('public-ip-dns')]"
+                }
             }
         },
         
@@ -389,6 +392,10 @@
             "type":"string",
             "value":"[reference(variables('public-ip-id'), variables('network-version')).ipAddress]"
         },
+        "VirtualMachineDNS": {
+            "type":"string",
+            "value":"[reference(variables('public-ip-id'), variables('network-version')).dnsSettings.fqdn]"
+        },
         "VirtualMachinePortalUri": {
             "type":"string",
             "value":"[concat('https://portal.azure.com/#resource', resourceGroup().id, '/providers/Microsoft.Compute/virtualMachines/', variables('virtual-machine-name'), '/overview')]"
@@ -396,34 +403,6 @@
         "JupyterNotebookUri": {
             "type":"string",
             "value":"[concat('https://', variables('hdinsight-name'), '.azurehdinsight.net/jupyter/tree')]"
-        },
-        "VM": {
-            "type": "object",
-            "value": "[reference(variables('virtual-machine-id'), variables('virtual-machine-version'))]"
-        },
-        "IP": {
-            "type": "object",
-            "value": "[reference(variables('public-ip-id'), variables('network-version'))]"
-        },
-        "VNET": {
-            "type": "object",
-            "value": "[reference(variables('vnet-id'), variables('network-version'))]"
-        },
-        "NIC": {
-            "type": "object",
-            "value": "[reference(variables('nic-id'), variables('network-version'))]"
-        },
-        "NSG": {
-            "type": "object",
-            "value": "[reference(variables('network-security-id'), variables('network-version'))]"
-        },
-        "HDI": {
-            "type": "object",
-            "value": "[reference(variables('hdinsight-id'), variables('hdinsight-version'))]"
-        },
-        "dnsSettings": {
-            "type": "string",
-            "value": "[reference(variables('nic-id'), variables('network-version')).dnsSettings.internalDomainNameSuffix]"
         }
     }
 }
