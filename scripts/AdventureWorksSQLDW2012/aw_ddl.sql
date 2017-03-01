@@ -450,6 +450,8 @@ FROM $(schema).FactInternetSales AS FIS
        JOIN $(schema).DimGeography AS DG 
               ON DC.GeographyKey = DG.GeographyKey;
 			  
+GO
+			  
 -- Creating Historical Sales Data as View (ie, Avoid materializing the results)
 CREATE VIEW $(schema).SalesFromPastYears
 AS
