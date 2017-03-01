@@ -1,8 +1,5 @@
 USE AdventureWorks2012;
 
-DBCC FREEPROCCACHE;
-DBCC DROPCLEANBUFFERS;
-
 SELECT
   p.ProductID,
   p.Name ProductName,
