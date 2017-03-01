@@ -1,13 +1,17 @@
 {
 	"nbformat_minor": 1,
 	"cells": [{
-		"execution_count": null,
-		"cell_type": "code",
-		"source": "import sqlContext.implicits._\nimport java.util.Properties",
-		"outputs": [],
-		"metadata": {
-			"collapsed": false
-		}
+		"source": "## Demonstrate join of remote data\nJoin rows from Azure SQL Data Warehouse with static Azure Blob JSON",
+		"cell_type": "markdown",
+		"metadata": {}
+	}, {
+		"source": "---",
+		"cell_type": "markdown",
+		"metadata": {}
+	}, {
+		"source": "### Setup the Spark environment",
+		"cell_type": "markdown",
+		"metadata": {}
 	}, {
 		"execution_count": null,
 		"cell_type": "code",
@@ -17,6 +21,10 @@
 			"collapsed": false
 		}
 	}, {
+		"source": "### Define temp table for historical sales\nConnect to sales data sitting in SQL Data Warehouse using Hive's JDBC connector",
+		"cell_type": "markdown",
+		"metadata": {}
+	}, {
 		"execution_count": null,
 		"cell_type": "code",
 		"source": "val historicalSales = sqlContext.read.jdbc(url, \"SalesFromPastYears\", new Properties())\nhistoricalSales.registerTempTable(\"Historical\")",
@@ -25,6 +33,10 @@
 			"collapsed": false
 		}
 	}, {
+		"source": "### Define temp table for product data\nConnnect to product data sitting on WASB (Blob Storage) using Hive's WASB connector",
+		"cell_type": "markdown",
+		"metadata": {}
+	}, {
 		"execution_count": null,
 		"cell_type": "code",
 		"source": "val products = sqlContext.read.json(\"wasbs://edw-data-virtualization@bostondata.blob.core.windows.net/DimProduct.json\")\nproducts.registerTempTable(\"Products\")",
@@ -32,6 +44,10 @@
 		"metadata": {
 			"collapsed": false
 		}
+	}, {
+		"source": "### Join historical sales with product data\nSpark joins the data from SQL Data Warehouse with WASB",
+		"cell_type": "markdown",
+		"metadata": {}
 	}, {
 		"execution_count": null,
 		"cell_type": "code",
