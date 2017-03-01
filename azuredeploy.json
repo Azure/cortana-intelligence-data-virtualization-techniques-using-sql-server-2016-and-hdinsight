@@ -402,7 +402,7 @@
         },
         "JupyterNotebookUri": {
             "type":"string",
-            "value":"[concat('https://', variables('hdinsight-name'), '.azurehdinsight.net/jupyter/tree')]"
+            "value":"[concat('https://', variables('hdinsight-name'), '.azurehdinsight.net/jupyter/notebooks/Scala/Data%20Virtualization.ipynb')]"
         }
     }
 }
