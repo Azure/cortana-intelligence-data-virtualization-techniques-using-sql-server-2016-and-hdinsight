@@ -57,6 +57,12 @@ function New-Credential([string]$username, [string]$password) {
   return New-Object Management.Automation.PSCredential("$env:COMPUTERNAME\$username", $securepw)
 }
 
+function Create-DirIfNotExists([string]$path) {
+  if (! (Test-Path $path)) {
+    New-Item $path -Type Directory
+  }
+}
+
 $ENV_PATH = "C:\Windows\Temp\dv-env.json"
 $TEMP_INSTALL_PATH = "C:\Windows\Temp\Install.ps1"
 $SETUP_DIR = "C:\Tutorial\Setup"
@@ -91,19 +97,22 @@ $client = New-Object Net.Webclient
 } | ConvertTo-Json | Out-File $ENV_PATH -Encoding ascii
 
 $client.DownloadFile($InstallScript, $TEMP_INSTALL_PATH)
-
-if (! (Test-Path $SETUP_DIR)) {
-  New-Item $SETUP_DIR -Type Directory
-}
-
+Create-DirIfNotExists SETUP_DIR
 Copy-Item $TEMP_INSTALL_PATH $SETUP_DIR
 
 Invoke-Command localhost {
+
   $ws = New-Object -ComObject WScript.Shell
-  $shortcut = $ws.CreateShortcut("$home\desktop\Setup - Data Virtualization.lnk")
-  $shortcut.TargetPath = "powershell"
-  $shortcut.Arguments = "-ExecutionPolicy Unrestricted -File C:\Tutorial\Setup\Install.ps1"
-  $shortcut.Save()
+  $shortcut1 = $ws.CreateShortcut("$home\desktop\Setup - Data Virtualization.lnk")
+  $shortcut1.TargetPath = "powershell"
+  $shortcut1.Arguments = "-ExecutionPolicy Unrestricted -File C:\Tutorial\Setup\Install.ps1"
+  $shortcut1.Save()
+
+  
+  $shortcut2 = $ws.CreateShortcut("$home\desktop\SQL - Data Virtualization.lnk")
+  $shortcut2.TargetPath = "C:\Tutorial"
+  $shortcut2.Save()
+
 } -Credential (New-Credential $AdminUser $AdminPassword)
 
 Stop-Transcript
