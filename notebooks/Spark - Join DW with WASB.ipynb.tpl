@@ -1,7 +1,7 @@
 {
 	"nbformat_minor": 1,
 	"cells": [{
-		"source": "## Demonstrate join of remote data\nJoin rows from Azure SQL Data Warehouse with static Azure Blob JSON",
+		"source": "## Demonstrate join of remote data\nThis notebook demonstrates how to join data from a managed Azure SQL Data Warehouse with JSON data stored as a public Azure Blob",
 		"cell_type": "markdown",
 		"metadata": {}
 	}, {
@@ -15,13 +15,13 @@
 	}, {
 		"execution_count": null,
 		"cell_type": "code",
-		"source": "val server = \"$AZURE_SQL_SERVER\"\nval user = \"$ADMIN_USERNAME\"\nval password = \"$ADMIN_PASSWORD\"\nval database = \"$AZURE_SQL_DB\"\nval url = s\"jdbc:sqlserver://$server.database.windows.net:1433;database=$database;user=$user;password=$password\"",
+		"source": "import sqlContext.implicits._\nimport java.util.Properties\n\nval server = \"$AZURE_SQL_SERVER\"\nval user = \"$ADMIN_USERNAME\"\nval password = \"$ADMIN_PASSWORD\"\nval database = \"$AZURE_SQL_DB\"\nval url = s\"jdbc:sqlserver://$server.database.windows.net:1433;database=$database;user=$user;password=$password\"",
 		"outputs": [],
 		"metadata": {
 			"collapsed": false
 		}
 	}, {
-		"source": "### Define temp table for historical sales\nConnect to sales data sitting in SQL Data Warehouse using Hive's JDBC connector",
+		"source": "### Define temp table for historical sales\nConnect to sales data residing in SQL Data Warehouse using Hive's JDBC connector",
 		"cell_type": "markdown",
 		"metadata": {}
 	}, {
@@ -33,7 +33,7 @@
 			"collapsed": false
 		}
 	}, {
-		"source": "### Define temp table for product data\nConnnect to product data sitting on WASB (Blob Storage) using Hive's WASB connector",
+		"source": "### Define temp table for product data\nConnnect to product data residing on WASB (Azure Blob Storage) using Hive's WASB connector",
 		"cell_type": "markdown",
 		"metadata": {}
 	}, {
