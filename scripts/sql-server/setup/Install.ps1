@@ -178,4 +178,10 @@ Copy-Item ($files.mapred.path.Replace(".tpl", [String]::Empty)) $vars.polybaseCo
 "Restarting PolyBase" | Write-Verbose
 @("SQLPBENGINE"; "SQLPBDMS";) | Restart-Service
 
+# shortcut
+$ws = New-Object -ComObject WScript.Shell
+$shortcut = $ws.CreateShortcut("$home\desktop\SQL - Data Virtualization.lnk")
+$shortcut.TargetPath = "C:\Tutorial\sql"
+$shortcut.Save()
+
 Stop-Transcript
