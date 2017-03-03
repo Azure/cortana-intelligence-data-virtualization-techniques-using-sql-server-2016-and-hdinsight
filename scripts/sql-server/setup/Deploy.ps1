@@ -66,6 +66,7 @@ function Create-DirIfNotExists([string]$path) {
 $ENV_PATH = "C:\Windows\Temp\dv-env.json"
 $TEMP_INSTALL_PATH = "C:\Windows\Temp\Install.ps1"
 $SETUP_DIR = "C:\Tutorial\Setup"
+$SQL_DIR = "C:\Tutorial\sql"
 
 $ErrorActionPreference = "Stop"
 $VerbosePreference = "Continue"
@@ -98,6 +99,7 @@ $client = New-Object Net.Webclient
 
 $client.DownloadFile($InstallScript, $TEMP_INSTALL_PATH)
 Create-DirIfNotExists $SETUP_DIR
+Create-DirIfNotExists $SQL_DIR
 Copy-Item $TEMP_INSTALL_PATH $SETUP_DIR
 
 Invoke-Command localhost {
@@ -110,7 +112,7 @@ Invoke-Command localhost {
 
   
   $shortcut2 = $ws.CreateShortcut("$home\desktop\SQL - Data Virtualization.lnk")
-  $shortcut2.TargetPath = "C:\Tutorial"
+  $shortcut2.TargetPath = "C:\Tutorial\sql"
   $shortcut2.Save()
 
 } -Credential (New-Credential $AdminUser $AdminPassword)
