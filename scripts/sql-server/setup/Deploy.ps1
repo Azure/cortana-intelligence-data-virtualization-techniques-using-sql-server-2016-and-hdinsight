@@ -97,7 +97,7 @@ $client = New-Object Net.Webclient
 } | ConvertTo-Json | Out-File $ENV_PATH -Encoding ascii
 
 $client.DownloadFile($InstallScript, $TEMP_INSTALL_PATH)
-Create-DirIfNotExists SETUP_DIR
+Create-DirIfNotExists $SETUP_DIR
 Copy-Item $TEMP_INSTALL_PATH $SETUP_DIR
 
 Invoke-Command localhost {
