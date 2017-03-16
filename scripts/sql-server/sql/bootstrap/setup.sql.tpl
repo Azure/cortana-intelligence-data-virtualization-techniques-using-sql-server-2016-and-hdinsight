@@ -168,7 +168,8 @@ SELECT
 	INTO Production.BigProduct
 FROM nums
 --WHERE k <= 40000000
-WHERE k <= 80000000
+--WHERE k <= 80000000
+WHERE k <= 120000000
 
 INSERT INTO
 	Production.BigProduct
