@@ -167,7 +167,8 @@ SELECT
 	CAST('2008-03-11 10:01:36.827' AS DATETIME) AS ModifiedDate
 	INTO Production.BigProduct
 FROM nums
-WHERE k <= 40000000
+--WHERE k <= 40000000
+WHERE k <= 80000000
 
 INSERT INTO
 	Production.BigProduct
