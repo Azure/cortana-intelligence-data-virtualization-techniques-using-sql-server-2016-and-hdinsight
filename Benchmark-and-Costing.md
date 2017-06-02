@@ -25,7 +25,7 @@ Let's do the math to incorporate the performance data from above with the resour
 The raw performance data is:
 
 | Type | 40 million rows | 80 million rows | 120 million rows | 160 million rows |
-| --- | --- | --- | --- | --- |
+| ---- | --------------- | --------------- | ---------------- | ---------------- |
 | no scale out (SQL Server only) | 74 sec | 148 sec | 220 sec | 291 sec |
 | scale out (SQL Server + 2 node HDInsight cluster)	| 46 sec | 79 sec | 109 sec | 134 sec |
 | scale out (SQL Server + 4 node HDInsight cluster) | 60 sec | 80 sec | 83 sec | 92 sec |
