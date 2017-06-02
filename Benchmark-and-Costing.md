@@ -18,14 +18,14 @@ Using the [Azure pricing calculator](https://azure.microsoft.com/en-us/pricing/c
 - An HDInsight Spark cluster with 2 head and 2 worker Standard D3 v2 nodes of type Windows using the standard pricing tier in East US costs **$2.48/hour**.
 - An HDInsight Spark cluster with 2 head and 4 worker Standard D3 v2 nodes of type Windows using the standard pricing tier in East US costs **$3.72/hour**.
 
-So, the cost without scaling out (just using the VM with SQL Server 2016) is **$2.152/hour**. The cost with scaling out to a 2 node HDInsight cluster is $2.152/hour + $2.48/hour = **$4.63/hour**. The cost with scaling out to a 4 node HDInsight cluster is $2.152/hour + $3.72/hour = *$5.87/hour*. Note that these numbers are roughly right, but they don't consider the significantly cheaper resource costs of the public IP address, network interface, storage account, and load balancer.
+So, the cost without scaling out (just using the VM with SQL Server 2016) is **$2.152/hour**. The cost with scaling out to a 2 node HDInsight cluster is $2.152/hour + $2.48/hour = **$4.63/hour**. The cost with scaling out to a 4 node HDInsight cluster is $2.152/hour + $3.72/hour = **$5.87/hour**. Note that these numbers are roughly right, but they don't consider the significantly cheaper resource costs of the public IP address, network interface, storage account, and load balancer.
 
 Let's do the math to incorporate the performance data from above with the resource costs.
 
 The raw performance data is:
 
 | Type	| 40 million rows	| 80 million rows	| 120 million rows | 160 million rows |
-| -
+| --- | --- | --- | --- | --- |
 |no scale out (SQL Server only)	| 74 sec | 148 sec | 220 sec | 291 sec
 | scale out (SQL Server + 2 node HDInsight cluster)	| 46 sec | 79 sec | 109 sec | 134 sec |
 | scale out (SQL Server + 4 node HDInsight cluster)	| 60 sec | 80 sec	| 83 sec | 92 sec |
@@ -39,7 +39,7 @@ which means that it costs .11 cents per million rows to process 40 million rows 
 We do this for each cell and get:
 
 | Type | 40 million rows | 80 million rows | 120 million rows	| 160 million rows |
-| -
+| --- | --- | --- | --- | --- |
 | no scale out (SQL Server only)	| 0.11 | 0.11	| 0.11 | 0.11 |
 | scale out (SQL Server + 2 node HDInsight cluster) |	0.15 | 0.13 | 0.12 | 0.11 |
 | scale out (SQL Server + 4 node HDInsight cluster)	| 0.24 | 0.16 | 0.11 | 0.9 |
