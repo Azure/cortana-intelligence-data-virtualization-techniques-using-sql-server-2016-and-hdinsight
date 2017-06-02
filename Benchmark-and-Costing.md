@@ -24,7 +24,7 @@ Let's do the math to incorporate the performance data from above with the resour
 
 The raw performance data is:
 
-| Type	| 40 million rows	| 80 million rows	| 120 million rows | 160 million rows |
+| Type | 40 million rows | 80 million rows | 120 million rows | 160 million rows |
 | --- | --- | --- | --- | --- |
 |no scale out (SQL Server only)	| 74 sec | 148 sec | 220 sec | 291 sec
 | scale out (SQL Server + 2 node HDInsight cluster)	| 46 sec | 79 sec | 109 sec | 134 sec |
@@ -38,7 +38,7 @@ which means that it costs .11 cents per million rows to process 40 million rows 
 
 We do this for each cell and get:
 
-| Type | 40 million rows | 80 million rows | 120 million rows	| 160 million rows |
+| Type | 40 million rows | 80 million rows | 120 million rows | 160 million rows |
 | --- | --- | --- | --- | --- |
 | no scale out (SQL Server only)	| 0.11 | 0.11	| 0.11 | 0.11 |
 | scale out (SQL Server + 2 node HDInsight cluster) |	0.15 | 0.13 | 0.12 | 0.11 |
