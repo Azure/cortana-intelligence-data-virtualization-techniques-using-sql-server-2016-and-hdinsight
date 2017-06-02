@@ -4,6 +4,8 @@ Query Scale-out makes sense if the data already exists on HDInsight. You may not
 
 ![BenchmarkingResults](./assets/media2/benchmarking-results.png)
 
+** Figure 1: Query execution time with and without scaling **
+
 Note the linear increase in execution time with SQL Server only versus when HDInsight is used as well.
 
 Another interesting observation is the flattening out of execution time of a four versus a two-worker node HDInsight cluster.
@@ -26,9 +28,9 @@ The raw performance data is:
 
 | Type | 40 million rows | 80 million rows | 120 million rows | 160 million rows |
 | ---- | --------------- | --------------- | ---------------- | ---------------- |
-| no scale out (SQL Server only) | 74 sec | 148 sec | 220 sec | 291 sec |
-| scale out (SQL Server + 2 node HDInsight cluster) | 46 sec | 79 sec | 109 sec | 134 sec |
-| scale out (SQL Server + 4 node HDInsight cluster) | 60 sec | 80 sec | 83 sec | 92 sec |
+| Without scale out (SQL Server only) | 74 sec | 148 sec | 220 sec | 291 sec |
+| With scale out (SQL Server + 2 node HDInsight cluster) | 46 sec | 79 sec | 109 sec | 134 sec |
+| With scale out (SQL Server + 4 node HDInsight cluster) | 60 sec | 80 sec | 83 sec | 92 sec |
 
 Now, for each cell, divide the seconds by the number of million rows, then multiply by the cost (in cents) divided by the time (in seconds). For example, for the first cell we would do:
 
@@ -40,12 +42,14 @@ We do this for each cell and get:
 
 | Type | 40 million rows | 80 million rows | 120 million rows | 160 million rows |
 | ---- | --------------- | --------------- | ---------------- | ---------------- |
-| no scale out (SQL Server only) | 0.11 | 0.11 | 0.11 | 0.11 |
-| scale out (SQL Server + 2 node HDInsight cluster) | 0.15 | 0.13 | 0.12 | 0.11 |
-| scale out (SQL Server + 4 node HDInsight cluster) | 0.24 | 0.16 | 0.11 | 0.9 |
+| Without scale out (SQL Server only) | 0.11 | 0.11 | 0.11 | 0.11 |
+| With scale out (SQL Server + 2 node HDInsight cluster) | 0.15 | 0.13 | 0.12 | 0.11 |
+| With scale out (SQL Server + 4 node HDInsight cluster) | 0.24 | 0.16 | 0.11 | 0.9 |
 
 At this point if we graph these data it looks like:
 
 ![CostingResults](./assets/media2/costing-results.png)
+
+** Figure 2: Query execution time with and without scaling (with pricing) **
 
 You can see that with 40 million rows it is cheapest to run without scaling out, and by the time you have 160 million rows scaling out becomes cheaper. This shows that as the number of rows increases, it would become cheaper to run with scaling out . You can use these types of benchmarks and calculations to help you deploy resources with the proper balance of performance and cost.
