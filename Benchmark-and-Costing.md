@@ -4,7 +4,7 @@ Query Scale-out makes sense if the data already exists on HDInsight. You may not
 
 ![BenchmarkingResults](./assets/media2/benchmarking-results.png)
 
-** Figure 1: Query execution time with and without scaling **
+**Figure 1: Query execution time with and without scaling**
 
 Note the linear increase in execution time with SQL Server only versus when HDInsight is used as well.
 
@@ -50,6 +50,6 @@ At this point if we graph these data it looks like:
 
 ![CostingResults](./assets/media2/costing-results.png)
 
-** Figure 2: Query execution time with and without scaling (with pricing) **
+**Figure 2: Query execution time with and without scaling (with pricing)**
 
 You can see that with 40 million rows it is cheapest to run without scaling out, and by the time you have 160 million rows scaling out becomes cheaper. This shows that as the number of rows increases, it would become cheaper to run with scaling out . You can use these types of benchmarks and calculations to help you deploy resources with the proper balance of performance and cost.
