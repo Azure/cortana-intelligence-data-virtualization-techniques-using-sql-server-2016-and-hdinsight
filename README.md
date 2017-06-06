@@ -321,7 +321,7 @@ And finally joined the table data to get the query results.
 
 After running all these steps, you should see the top 20 matching rows, for example:
 
-![Join Tables](./assets/media2/jointables.png)
+![Join Tables](./assets/media2/top20.png)
 
 The key here is to notice the combined result set produced by joining sales data, stored in a SQL Data Warehouse, with product data, stored in the primary backing blob store for the HDInsight cluster.
 
