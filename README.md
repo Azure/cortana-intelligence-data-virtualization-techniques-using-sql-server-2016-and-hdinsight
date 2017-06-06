@@ -226,7 +226,7 @@ In the first leg of the demo, we are going to look at the case where the entire 
 1. It will bring up sample SQL folder in Explorer.
 1. Open the file **select-without-pushdown.sql**
 
-Note: You can also access the scripts from the [repo directory](https://github.com/Azure/cortana-intelligence-dw-advanced-hybrid-analytics/tree/master/scripts/sql-server/sql).
+Note: You can also access the scripts from the [repo directory](https://github.com/Azure/cortana-intelligence-data-virtualization-techniques-using-sql-server-2016-and-hdinsight/tree/master/scripts/sql-server/sql).
 
 AdventureWorks has a custom table named BigProduct with 40 million rows and we will execute the following query to join the table data.
 
