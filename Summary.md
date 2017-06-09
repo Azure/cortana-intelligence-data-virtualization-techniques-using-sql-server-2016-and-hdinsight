@@ -46,17 +46,11 @@ Hybrid Execution can be illustrated abstractly as:
 The benefits of data virtualization can be summarized as follows:
 
 - Offload large computation to more powerful processing systems and seamlessly merge the results.
-
 - Access large collections of disparate data sources across system boundaries (example: distinct systems for marketing and sales data).
-
 - Enable queries against large datasets without the need to move them to a single system (potentially with limited storage).
-
 - Reduce heavy network I/O by moving compute to the data.
-
 - Simplify access to all sorts of data using a single query language (example: SQL).
-
 - Avoid the need to replicate business logic across multiple systems.
-
 - Integrate cloud-based compute with corporate datacenter environments.
 
 To start the deployment, click on the deployment button.
