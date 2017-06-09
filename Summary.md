@@ -29,7 +29,7 @@ Machine and deep learning rely heavily on large data sets - both historical data
 
 To gain advanced insights from data, we need techniques to access big data stored in various heterogenous systems without having to move the data physically.
 
-Also, in big data platforms as the demand for crunching data increases, we run into resource constrained environments. That’s when the ability to offload compute to powerful processing clusters becomes critical.
+Also, in big data platforms as the demand for crunching data increases, we run into resource constrained environments. That's when the ability to offload compute to powerful processing clusters becomes critical.
 
 This demo shows how data virtualization addresses the above use cases, using Query Scale-out and Hybrid Execution techniques.
 
@@ -39,7 +39,7 @@ Query Scale-Out can be illustrated abstractly as:
 
 ![Query Scale Out](./assets/media2/queryscaleoutazure.png)
 
-Hybrid Execution “pushes” the query to a remote system. This enables access to referential relational data from a non-relational system such as Hadoop.
+Hybrid Execution "pushes" the query to a remote system. This enables access to referential relational data from a non-relational system such as Hadoop.
 
 Hybrid Execution can be illustrated abstractly as:
 
