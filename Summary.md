@@ -12,16 +12,14 @@ The first section of the demo implements Query Scale-out, which demonstrates how
 
 The second section deploys Hybrid execution technique and demonstrates how to join your relational data in an Azure SQL Data Warehouse with data residing in a Hadoop cluster.
 
-
 To run this demo, you need an active Azure subscription. The demo uses the following Azure services:
 
-1.	HDInsight (HDI)
-1.  SQL Server 2016 (IaaS) with PolyBase
-1.  Azure SQL Data Warehouse (SQL DW)  
-1.  Azure Storage Blob
+1. HDInsight (HDI)
+1. SQL Server 2016 (IaaS) with PolyBase
+1. Azure SQL Data Warehouse (SQL DW)  
+1. Azure Storage Blob
 
 This automated deployment installs Java Runtime Environment (JRE) for you. The user of this tutorial is willing to agree to the [terms of the Oracle JRE][1]. If you disagree with JRE terms of use, please do not proceed with rest of this document.
-
 
 # Description
 
@@ -37,7 +35,7 @@ In the case of Query Scale-out, a part of an entire query is executed remotely (
 
 Query Scale-Out can be illustrated abstractly as:
 
-![Query Scale Out](./assets/media2/queryscaleoutazure.png)
+![Query Scale Out][IMG1]
 
 Hybrid Execution "pushes" the query to a remote system. This enables access to referential relational data from a non-relational system such as Hadoop.
 
@@ -47,26 +45,25 @@ Hybrid Execution can be illustrated abstractly as:
 
 The benefits of data virtualization can be summarized as follows:
 
-•	 Offload large computation to more powerful processing systems and seamlessly merge the results.
+- Offload large computation to more powerful processing systems and seamlessly merge the results.
 
-•	Access large collections of disparate data sources across system boundaries (example: distinct systems for marketing and sales data).
+- Access large collections of disparate data sources across system boundaries (example: distinct systems for marketing and sales data).
 
-•	Enable queries against large datasets without the need to move them to a single system (potentially with limited storage).
+- Enable queries against large datasets without the need to move them to a single system (potentially with limited storage).
 
-•	Reduce heavy network I/O by moving compute to the data.
+- Reduce heavy network I/O by moving compute to the data.
 
-•	Simplify access to all sorts of data using a single query language (example: SQL).
+- Simplify access to all sorts of data using a single query language (example: SQL).
 
-•	Avoid the need to replicate business logic across multiple systems.
+- Avoid the need to replicate business logic across multiple systems.
 
-•	Integrate cloud-based compute with corporate datacenter environments.
+- Integrate cloud-based compute with corporate datacenter environments.
 
 To start the deployment, click on the deployment button.
 
 For a deeper understanding on how to implement the data virtualization techniques, read the [technical guide][2].
 
-
 [IMG1]: ./assets/media2/queryscaleoutazure.png
 [IMG2]: ./assets/media2/hybridexecutionazure.png
 [1]: http://www.oracle.com/technetwork/java/javase/terms/license/index.html
-[2]: https://github.com/Azure/cortana-intelligence-dw-advanced-hybrid-analytics/blob/master/README.md
+[2]: https://github.com/Azure/cortana-intelligence-data-virtualization-techniques-using-sql-server-2016-and-hdinsight/blob/master/README.md
