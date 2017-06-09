@@ -2,7 +2,7 @@
 
 Okay, almost done! You need to do these two steps before you can test the solution:
 
-1. Log in to your VM with IP address **{Outputs.virtualMachineIP}**, username: &lt;username&gt; and password:&lt;password&gt; (&lt;username&gt; and &lt;password&gt; are the values you chose at the beginning of this deployment).
+1. Log in to your VM with IP address **{Outputs.virtualMachineIP}**, username: \&lt;username&gt; and password:&lt;password&gt; (&lt;username&gt; and &lt;password&gt; are the values you chose at the beginning of this deployment).
 
   You can connect to your VM using the built-in Windows Remote Desktop Connection client, or for your convenience, you can download the .RDP connection file from the [VM Status Page]({Outputs.virtualMachinePortalUri}) by clicking the `Connect` button there.
 
