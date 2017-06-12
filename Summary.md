@@ -1,9 +1,3 @@
-# Summary
-
-This tutorial demonstrates two data virtualization techniques, namely, Query Scale-out and Hybrid Execution.
-
-Approximate provisioning time: 30 minutes
-
 # Overview
 
 In this demo you will deploy and run two flavors of data virtualization on the Azure stack.
