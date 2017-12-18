@@ -68,10 +68,8 @@ You can imagine a scenario where you have lots of processed data residing in HDI
 
 Using a browser of your choice, do the following steps:
 1.	Browse to the Jupyter Notebook installed on your HDI cluster by clicking [here]({Outputs.jupyterNotebookUri}).
-2.	Expand the **Scala** folder.
-3.	Click on the **Data Virtualization.ipynb** IPython notebook.
-4.	Login using the same user name and password you used during the deployment.
-5.	Select and run each of the cells from top to bottom, waiting for each cell to finish before moving on to the next one. You can tell when a cell has finished executing because the * will no longer be there.
+1.	Login using the same user name and password you used during the deployment.
+1.	Select and run each of the cells from top to bottom, waiting for each cell to finish before moving on to the next one. You can tell when a cell has finished executing because the * will no longer be there.
 
 After running all these steps, you should see the top 20 matching rows.
 

@@ -33,7 +33,7 @@ Param(
   [Parameter(Mandatory=$True, Position=9)]
   [string]$SQLDWDatabase,
   
-  [string]$SQLInstaller = "C:\SQLServer_13.0_Full\setup.exe",
+  [string]$SQLInstaller = "C:\SQLServerFull\setup.exe",
   
   [string]$PolyBaseConfig = "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf",
   
