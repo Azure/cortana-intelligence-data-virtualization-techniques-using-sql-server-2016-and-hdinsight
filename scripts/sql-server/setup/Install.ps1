@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 $VerbosePreference = "Continue"
 Start-Transcript -Path C:\Windows\Temp\dv-install.log
 
-$SQL_SETUP = "C:\SQLServer_13.0_Full\setup.exe";
+$SQL_SETUP = "C:\SQLServerFull\setup.exe";
 $POLYBASE_CONF = "C:\Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\Polybase\Hadoop\conf";
 
 Add-Type -Assembly "System.IO.Compression.FileSystem"
