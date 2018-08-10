@@ -1,4 +1,4 @@
-> DISCLAIMER. Please note that this solution is no longer being supported. Feel free to use it, but do so at your own risk.
+> **DISCLAIMER. Please note that this solution is no longer being supported. Feel free to use it, but do so at your own risk**.
 
 # Data Virtualization Tutorial Using SQL Server 2016 and HDInsight
 
